@@ -1,0 +1,171 @@
+-- V5: Seed demo employee profiles
+-- Description: Creates profiles for the 3 demo users (manager, emp1, emp2)
+--              Idempotent: Uses INSERT...ON CONFLICT DO NOTHING
+
+-- Insert profile for Manager (employee_id: 100)
+INSERT INTO employee_profiles (
+    id,
+    user_id,
+    legal_first_name,
+    legal_last_name,
+    department,
+    job_code,
+    job_family,
+    job_level,
+    employment_status,
+    hire_date,
+    fte,
+    preferred_name,
+    job_title,
+    office_location,
+    work_phone,
+    work_location_type,
+    bio,
+    skills,
+    personal_email,
+    personal_phone,
+    date_of_birth,
+    absence_balance_days,
+    salary,
+    performance_rating
+)
+SELECT
+    gen_random_uuid(),
+    u.id,
+    'John',
+    'Manager',
+    'Engineering',
+    'ENG-MGR-001',
+    'Engineering',
+    'Senior Manager',
+    'ACTIVE',
+    '2018-01-15',
+    1.00,
+    'John',
+    'Engineering Manager',
+    'New York Office',
+    '+1-555-0100',
+    'HYBRID',
+    'Experienced engineering manager with 10+ years in software development and team leadership.',
+    'Leadership, Team Management, Software Architecture, Agile, Strategic Planning',
+    'john.manager.personal@example.com',
+    '+1-555-0199',
+    '1985-03-20',
+    20.00,
+    125000.00,
+    'Exceeds Expectations'
+FROM users u
+WHERE u.employee_id = '100'
+ON CONFLICT (user_id) DO NOTHING;
+
+-- Insert profile for Employee 1 (employee_id: 101)
+INSERT INTO employee_profiles (
+    id,
+    user_id,
+    legal_first_name,
+    legal_last_name,
+    department,
+    job_code,
+    job_family,
+    job_level,
+    employment_status,
+    hire_date,
+    fte,
+    preferred_name,
+    job_title,
+    office_location,
+    work_phone,
+    work_location_type,
+    bio,
+    skills,
+    personal_email,
+    personal_phone,
+    date_of_birth,
+    absence_balance_days,
+    salary,
+    performance_rating
+)
+SELECT
+    gen_random_uuid(),
+    u.id,
+    'Alice',
+    'Johnson',
+    'Engineering',
+    'ENG-DEV-001',
+    'Engineering',
+    'Senior Software Engineer',
+    'ACTIVE',
+    '2020-06-01',
+    1.00,
+    'Ali',
+    'Senior Software Engineer',
+    'New York Office',
+    '+1-555-0101',
+    'REMOTE',
+    'Full-stack developer passionate about building scalable applications and mentoring junior developers.',
+    'React, TypeScript, Java, Spring Boot, PostgreSQL, AWS, Docker, Kubernetes',
+    'alice.johnson.personal@example.com',
+    '+1-555-0191',
+    '1990-07-15',
+    15.00,
+    95000.00,
+    'Meets Expectations'
+FROM users u
+WHERE u.employee_id = '101'
+ON CONFLICT (user_id) DO NOTHING;
+
+-- Insert profile for Employee 2 (employee_id: 102)
+INSERT INTO employee_profiles (
+    id,
+    user_id,
+    legal_first_name,
+    legal_last_name,
+    department,
+    job_code,
+    job_family,
+    job_level,
+    employment_status,
+    hire_date,
+    fte,
+    preferred_name,
+    job_title,
+    office_location,
+    work_phone,
+    work_location_type,
+    bio,
+    skills,
+    personal_email,
+    personal_phone,
+    date_of_birth,
+    absence_balance_days,
+    salary,
+    performance_rating
+)
+SELECT
+    gen_random_uuid(),
+    u.id,
+    'Robert',
+    'Smith',
+    'Engineering',
+    'ENG-DEV-002',
+    'Engineering',
+    'Software Engineer',
+    'ACTIVE',
+    '2022-03-10',
+    1.00,
+    'Rob',
+    'Software Engineer',
+    'San Francisco Office',
+    '+1-555-0102',
+    'ONSITE',
+    'Backend specialist focused on API development and database optimization.',
+    'Java, Spring Boot, PostgreSQL, REST APIs, Microservices, Redis',
+    'robert.smith.personal@example.com',
+    '+1-555-0192',
+    '1992-11-08',
+    10.00,
+    80000.00,
+    'Meets Expectations'
+FROM users u
+WHERE u.employee_id = '102'
+ON CONFLICT (user_id) DO NOTHING;
