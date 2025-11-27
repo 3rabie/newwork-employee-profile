@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/contexts/AuthContext';
 import { SwitchUserDialog } from '../features/auth/components/SwitchUserDialog';
 import './HomePage.css';
 
 export function HomePage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
 
   return (
@@ -51,6 +53,14 @@ export function HomePage() {
                 <span className="detail-value">{user?.managerId}</span>
               </div>
             )}
+          </div>
+          <div className="actions-section">
+            <button
+              className="btn-primary"
+              onClick={() => navigate(`/profile/${user?.userId}`)}
+            >
+              View My Profile
+            </button>
           </div>
         </div>
       </main>
