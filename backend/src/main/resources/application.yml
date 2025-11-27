@@ -21,6 +21,17 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+    # Performance optimization: validate migrations at startup without re-applying
+    validate-on-migrate: true
+    # Out-of-order migrations allowed for development flexibility
+    out-of-order: true
+    # Clean disabled for safety (never drop all objects)
+    clean-disabled: true
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:secret-key-change-in-production-minimum-256-bits-required-for-hs256}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
 
 server:
   port: 8080
