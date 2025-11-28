@@ -2,14 +2,16 @@
  * Profile API Service
  *
  * API functions for employee profile management.
- * Handles GET and PATCH requests to /api/profiles endpoints.
+ * Uses GraphQL for queries (getProfile) and REST for mutations (updateProfile).
  */
 
 import { httpClient } from '../../../lib/http-client';
+import { graphqlClient } from '../../../lib/graphql-client';
+import { GET_PROFILE_QUERY } from '../../../lib/graphql-queries';
 import type { ProfileDTO, ProfileUpdateDTO } from '../types';
 
 /**
- * Get employee profile by user ID.
+ * Get employee profile by user ID using GraphQL.
  * Returns profile data filtered by viewer's permissions.
  *
  * @param userId - The UUID of the profile owner
@@ -17,12 +19,15 @@ import type { ProfileDTO, ProfileUpdateDTO } from '../types';
  * @throws Error if profile not found or forbidden
  */
 export const getProfile = async (userId: string): Promise<ProfileDTO> => {
-  const response = await httpClient.get<ProfileDTO>(`/api/profiles/${userId}`);
-  return response.data;
+  const data = await graphqlClient.request<{ profile: ProfileDTO }>(
+    GET_PROFILE_QUERY,
+    { userId }
+  );
+  return data.profile;
 };
 
 /**
- * Update employee profile.
+ * Update employee profile using REST.
  * Only updates fields the viewer has permission to edit.
  *
  * @param userId - The UUID of the profile owner
