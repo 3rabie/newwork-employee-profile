@@ -1,0 +1,151 @@
+# GraphQL Schema for Employee Profile Application
+
+# Scalar types
+scalar DateTime
+scalar UUID
+
+# Root Query type
+type Query {
+    """
+    Get employee profile by user ID.
+    Fields are filtered based on viewer's permissions.
+    """
+    profile(userId: UUID!): Profile
+
+    """
+    Get all feedback visible to the authenticated user for a specific user.
+    Visibility rules: authors see their feedback, recipients see feedback about them,
+    managers see feedback about their direct reports.
+    """
+    feedbackForUser(userId: UUID!): [Feedback!]!
+
+    """
+    Get all feedback authored by the authenticated user.
+    """
+    myAuthoredFeedback: [Feedback!]!
+
+    """
+    Get all feedback received by the authenticated user.
+    """
+    myReceivedFeedback: [Feedback!]!
+}
+
+# Feedback type
+type Feedback {
+    """Unique identifier for the feedback"""
+    id: UUID!
+
+    """User who wrote the feedback"""
+    author: User!
+
+    """User who received the feedback"""
+    recipient: User!
+
+    """Feedback text content"""
+    text: String!
+
+    """Whether the feedback was polished by AI"""
+    aiPolished: Boolean!
+
+    """When the feedback was created"""
+    createdAt: DateTime!
+}
+
+# User type
+type User {
+    """Unique identifier for the user"""
+    id: UUID!
+
+    """User's work email"""
+    email: String!
+
+    """Employee ID"""
+    employeeId: String!
+
+    """User's role (EMPLOYEE or MANAGER)"""
+    role: String!
+
+    """User's employee profile (may be null if not set up)"""
+    profile: Profile
+}
+
+# Profile type - fields are permission-filtered based on viewer relationship
+type Profile {
+    """User ID this profile belongs to"""
+    userId: UUID!
+
+    """Legal first name (always visible)"""
+    legalFirstName: String!
+
+    """Legal last name (always visible)"""
+    legalLastName: String!
+
+    """Preferred name (NON_SENSITIVE)"""
+    preferredName: String
+
+    """Work email (always visible)"""
+    email: String!
+
+    """Employee ID (always visible)"""
+    employeeId: String!
+
+    """Job title (NON_SENSITIVE)"""
+    jobTitle: String
+
+    """Office location (NON_SENSITIVE)"""
+    officeLocation: String
+
+    """Work phone number (NON_SENSITIVE)"""
+    workPhone: String
+
+    """Work location type: REMOTE, OFFICE, HYBRID (NON_SENSITIVE)"""
+    workLocationType: String
+
+    """Employee bio (NON_SENSITIVE)"""
+    bio: String
+
+    """List of skills (NON_SENSITIVE)"""
+    skills: [String!]
+
+    """Profile photo URL (NON_SENSITIVE)"""
+    profilePhotoUrl: String
+
+    """Personal email (SENSITIVE - only visible to SELF)"""
+    personalEmail: String
+
+    """Personal phone (SENSITIVE - only visible to SELF)"""
+    personalPhone: String
+
+    """Home address (SENSITIVE - only visible to SELF)"""
+    homeAddress: String
+
+    """Emergency contact name (SENSITIVE - only visible to SELF)"""
+    emergencyContactName: String
+
+    """Emergency contact phone (SENSITIVE - only visible to SELF)"""
+    emergencyContactPhone: String
+
+    """Emergency contact relationship (SENSITIVE - only visible to SELF)"""
+    emergencyContactRelationship: String
+
+    """Date of birth (SENSITIVE - only visible to SELF)"""
+    dateOfBirth: String
+
+    """Visa/work permit information (SENSITIVE - only visible to SELF)"""
+    visaWorkPermit: String
+
+    """Field metadata indicating visibility and editability"""
+    metadata: ProfileMetadata!
+}
+
+# Profile metadata for field-level permissions
+type ProfileMetadata {
+    """Viewer's relationship to this profile (SELF, MANAGER, or OTHER)"""
+    relationship: String!
+
+    """Fields visible to the viewer"""
+    visibleFields: [String!]!
+
+    """Fields editable by the viewer"""
+    editableFields: [String!]!
+}

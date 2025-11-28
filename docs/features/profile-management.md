@@ -289,65 +289,109 @@ Three demo profiles are seeded for testing:
 
 ## API Endpoints
 
-### GET /api/profiles/{userId}
+**Architecture Note**: Profile management uses a hybrid REST + GraphQL architecture:
+- **REST**: For mutations (updating profiles) - `PATCH /api/profiles/{userId}`
+- **GraphQL**: For queries (retrieving profiles) - see [GraphQL API Documentation](../graphql-api.md)
+
+This provides better performance through DataLoader batching and flexible field selection.
+
+### GraphQL Query: profile
 
 **Description**: Retrieve employee profile by user ID with permission-based field filtering.
 
-**Authentication**: Required (Bearer token)
+**Authentication**: Required (Bearer token in Authorization header)
 
-**Path Parameters**:
-- `userId` (UUID) - The ID of the user whose profile to retrieve
+**GraphQL Query**:
+```graphql
+query GetProfile {
+  profile(userId: "550e8400-e29b-41d4-a716-446655440000") {
+    userId
+    legalFirstName
+    legalLastName
+    preferredName
+    department
+    jobTitle
+    workLocationType
+    bio
+    metadata {
+      relationship
+      visibleFields
+      editableFields
+    }
+  }
+}
+```
 
-**Response**: ProfileDTO with fields filtered based on viewer's relationship to profile owner
-
-**Example Request**:
+**HTTP Request**:
 ```bash
-GET /api/profiles/550e8400-e29b-41d4-a716-446655440000
+POST /graphql
 Authorization: Bearer <jwt-token>
+Content-Type: application/json
+
+{
+  "query": "query { profile(userId: \"550e8400-e29b-41d4-a716-446655440000\") { ... } }"
+}
 ```
 
 **Example Response** (SELF viewing own profile):
 ```json
 {
-  "id": "a1b2c3d4-e5f6-4789-a012-b3c4d5e6f789",
-  "userId": "550e8400-e29b-41d4-a716-446655440000",
-  "legalFirstName": "Alice",
-  "legalLastName": "Johnson",
-  "department": "Engineering",
-  "employmentStatus": "ACTIVE",
-  "hireDate": "2020-06-01",
-  "fte": 1.00,
-  "preferredName": "Ali",
-  "jobTitle": "Senior Software Engineer",
-  "workLocationType": "REMOTE",
-  "bio": "Full-stack developer...",
-  "personalEmail": "alice.personal@example.com",
-  "salary": 95000.00,
-  "performanceRating": "Meets Expectations",
-  "createdAt": "2024-01-15T10:30:00",
-  "updatedAt": "2024-01-15T10:30:00"
+  "data": {
+    "profile": {
+      "userId": "550e8400-e29b-41d4-a716-446655440000",
+      "legalFirstName": "Alice",
+      "legalLastName": "Johnson",
+      "preferredName": "Ali",
+      "department": "Engineering",
+      "jobTitle": "Senior Software Engineer",
+      "workLocationType": "REMOTE",
+      "bio": "Full-stack developer...",
+      "metadata": {
+        "relationship": "SELF",
+        "visibleFields": ["all fields visible"],
+        "editableFields": ["preferredName", "jobTitle", "bio", "personalEmail", ...]
+      }
+    }
+  }
 }
 ```
 
 **Example Response** (COWORKER viewing profile - sensitive fields hidden):
 ```json
 {
-  "id": "a1b2c3d4-e5f6-4789-a012-b3c4d5e6f789",
-  "userId": "550e8400-e29b-41d4-a716-446655440000",
-  "legalFirstName": "Alice",
-  "legalLastName": "Johnson",
-  "department": "Engineering",
-  "employmentStatus": "ACTIVE",
-  "preferredName": "Ali",
-  "jobTitle": "Senior Software Engineer",
-  "bio": "Full-stack developer..."
+  "data": {
+    "profile": {
+      "userId": "550e8400-e29b-41d4-a716-446655440000",
+      "legalFirstName": "Alice",
+      "legalLastName": "Johnson",
+      "preferredName": "Ali",
+      "department": "Engineering",
+      "jobTitle": "Senior Software Engineer",
+      "bio": "Full-stack developer...",
+      "metadata": {
+        "relationship": "OTHER",
+        "visibleFields": ["legalFirstName", "legalLastName", "department", ...],
+        "editableFields": []
+      }
+    }
+  }
 }
 ```
 
-**Status Codes**:
-- `200 OK` - Profile retrieved successfully
-- `401 Unauthorized` - Missing or invalid authentication
-- `404 Not Found` - Profile not found
+**Error Responses**:
+```json
+{
+  "errors": [
+    {
+      "message": "Profile not found",
+      "path": ["profile"]
+    }
+  ],
+  "data": null
+}
+```
+
+For more details, see [GraphQL API Documentation](../graphql-api.md).
 
 ### PATCH /api/profiles/{userId}
 

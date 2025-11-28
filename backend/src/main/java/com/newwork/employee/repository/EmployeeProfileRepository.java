@@ -27,6 +27,15 @@ public interface EmployeeProfileRepository extends JpaRepository<EmployeeProfile
     Optional<EmployeeProfile> findByUserId(UUID userId);
 
     /**
+     * Find all employee profiles by user IDs (for batch loading).
+     *
+     * @param userIds list of user IDs
+     * @return list of profiles matching the user IDs
+     */
+    @Query("SELECT p FROM EmployeeProfile p WHERE p.user.id IN :userIds")
+    List<EmployeeProfile> findAllByUserIdIn(@Param("userIds") List<UUID> userIds);
+
+    /**
      * Find all profiles with a specific employment status.
      *
      * @param status the employment status

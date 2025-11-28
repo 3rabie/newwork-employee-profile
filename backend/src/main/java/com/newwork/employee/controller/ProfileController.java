@@ -21,53 +21,17 @@ import java.util.UUID;
 
 /**
  * REST controller for employee profile management.
- * Provides endpoints for viewing and updating employee profiles with permission-based access control.
+ * Provides PATCH endpoint for updating employee profiles.
+ * Query operations have been moved to GraphQL for better performance (see ProfileGraphQLController).
  */
 @RestController
 @RequestMapping("/api/profiles")
 @RequiredArgsConstructor
-@Tag(name = "Profile Management", description = "APIs for managing employee profiles")
+@Tag(name = "Profile Management", description = "REST API for updating employee profiles. Use GraphQL for queries.")
 @SecurityRequirement(name = "bearerAuth")
 public class ProfileController {
 
     private final ProfileService profileService;
-
-    /**
-     * Get employee profile by user ID.
-     * Fields are filtered based on the authenticated user's permissions.
-     *
-     * @param userDetails authenticated user details (username contains user UUID)
-     * @param userId the ID of the user whose profile to retrieve
-     * @return ProfileDTO with fields filtered by permissions
-     */
-    @GetMapping("/{userId}")
-    @Operation(
-            summary = "Get employee profile",
-            description = "Retrieve employee profile by user ID. Fields are filtered based on viewer's relationship to the profile owner."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Profile retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ProfileDTO.class))
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized - Invalid or missing authentication token"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Profile not found"
-            )
-    })
-    public ResponseEntity<ProfileDTO> getProfile(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable UUID userId
-    ) {
-        UUID viewerId = UUID.fromString(userDetails.getUsername());
-        ProfileDTO profile = profileService.getProfile(viewerId, userId);
-        return ResponseEntity.ok(profile);
-    }
 
     /**
      * Update employee profile.
@@ -83,7 +47,8 @@ public class ProfileController {
             summary = "Update employee profile",
             description = "Update employee profile. Only fields the user has permission to edit will be updated. " +
                     "NON_SENSITIVE fields can be edited by SELF and MANAGER (for direct reports). " +
-                    "SENSITIVE fields can only be edited by SELF."
+                    "SENSITIVE fields can only be edited by SELF. " +
+                    "Note: Use GraphQL queries to retrieve profiles (see /graphql endpoint)."
     )
     @ApiResponses(value = {
             @ApiResponse(
