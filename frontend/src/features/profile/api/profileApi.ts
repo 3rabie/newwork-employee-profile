@@ -5,8 +5,8 @@
  * Handles GET and PATCH requests to /api/profiles endpoints.
  */
 
-import httpClient from '../../../lib/http-client';
-import { ProfileDTO, ProfileUpdateDTO } from '../types';
+import { httpClient } from '../../../lib/http-client';
+import type { ProfileDTO, ProfileUpdateDTO } from '../types';
 
 /**
  * Get employee profile by user ID.

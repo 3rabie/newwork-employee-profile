@@ -7,7 +7,7 @@
 
 import React from 'react';
 import ProfileField from './ProfileField';
-import { ProfileDTO, FieldMetadata } from '../types';
+import type { ProfileDTO, FieldMetadata } from '../types';
 
 interface ProfileSectionProps {
   title: string;

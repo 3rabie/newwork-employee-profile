@@ -10,7 +10,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/contexts/AuthContext';
 import ProfileSection from '../components/ProfileSection';
 import { getProfile, updateProfile } from '../api/profileApi';
-import { ProfileDTO, ProfileUpdateDTO, FieldMetadata, FieldType } from '../types';
+import type { ProfileDTO, ProfileUpdateDTO, FieldMetadata } from '../types';
+import { FieldType } from '../types';
 import './ProfilePage.css';
 
 const ProfilePage: React.FC = () => {
@@ -25,7 +26,7 @@ const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isSelf = user?.id === userId;
+  const isSelf = user?.userId === userId;
 
   useEffect(() => {
     if (userId) {

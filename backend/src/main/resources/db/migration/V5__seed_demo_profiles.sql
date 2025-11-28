@@ -2,7 +2,7 @@
 -- Description: Creates profiles for the 3 demo users (manager, emp1, emp2)
 --              Idempotent: Uses INSERT...ON CONFLICT DO NOTHING
 
--- Insert profile for Manager (employee_id: 100)
+-- Insert profile for Manager (employee_id: MGR001)
 INSERT INTO employee_profiles (
     id,
     user_id,
@@ -32,7 +32,7 @@ INSERT INTO employee_profiles (
 SELECT
     gen_random_uuid(),
     u.id,
-    'John',
+    'Test',
     'Manager',
     'Engineering',
     'ENG-MGR-001',
@@ -41,24 +41,24 @@ SELECT
     'ACTIVE',
     '2018-01-15',
     1.00,
-    'John',
+    'Test Manager',
     'Engineering Manager',
-    'New York Office',
-    '+1-555-0100',
+    'Berlin Office',
+    '+49-30-12345-100',
     'HYBRID',
     'Experienced engineering manager with 10+ years in software development and team leadership.',
     'Leadership, Team Management, Software Architecture, Agile, Strategic Planning',
-    'john.manager.personal@example.com',
-    '+1-555-0199',
+    'test.manager@example.de',
+    '+49-170-1234567',
     '1985-03-20',
     20.00,
     125000.00,
     'Exceeds Expectations'
 FROM users u
-WHERE u.employee_id = '100'
+WHERE u.employee_id = 'MGR001'
 ON CONFLICT (user_id) DO NOTHING;
 
--- Insert profile for Employee 1 (employee_id: 101)
+-- Insert profile for Employee 1 (employee_id: EMP001)
 INSERT INTO employee_profiles (
     id,
     user_id,
@@ -88,8 +88,8 @@ INSERT INTO employee_profiles (
 SELECT
     gen_random_uuid(),
     u.id,
-    'Alice',
-    'Johnson',
+    'Test',
+    'Employee1',
     'Engineering',
     'ENG-DEV-001',
     'Engineering',
@@ -97,24 +97,24 @@ SELECT
     'ACTIVE',
     '2020-06-01',
     1.00,
-    'Ali',
+    'Test Employee 1',
     'Senior Software Engineer',
-    'New York Office',
-    '+1-555-0101',
+    'Munich Office',
+    '+49-89-12345-101',
     'REMOTE',
     'Full-stack developer passionate about building scalable applications and mentoring junior developers.',
     'React, TypeScript, Java, Spring Boot, PostgreSQL, AWS, Docker, Kubernetes',
-    'alice.johnson.personal@example.com',
-    '+1-555-0191',
+    'test.employee1@example.de',
+    '+49-170-2345678',
     '1990-07-15',
     15.00,
     95000.00,
     'Meets Expectations'
 FROM users u
-WHERE u.employee_id = '101'
+WHERE u.employee_id = 'EMP001'
 ON CONFLICT (user_id) DO NOTHING;
 
--- Insert profile for Employee 2 (employee_id: 102)
+-- Insert profile for Employee 2 (employee_id: EMP002)
 INSERT INTO employee_profiles (
     id,
     user_id,
@@ -144,8 +144,8 @@ INSERT INTO employee_profiles (
 SELECT
     gen_random_uuid(),
     u.id,
-    'Robert',
-    'Smith',
+    'Test',
+    'Employee2',
     'Engineering',
     'ENG-DEV-002',
     'Engineering',
@@ -153,19 +153,19 @@ SELECT
     'ACTIVE',
     '2022-03-10',
     1.00,
-    'Rob',
+    'Test Employee 2',
     'Software Engineer',
-    'San Francisco Office',
-    '+1-555-0102',
+    'Hamburg Office',
+    '+49-40-12345-102',
     'ONSITE',
     'Backend specialist focused on API development and database optimization.',
     'Java, Spring Boot, PostgreSQL, REST APIs, Microservices, Redis',
-    'robert.smith.personal@example.com',
-    '+1-555-0192',
+    'test.employee2@example.de',
+    '+49-170-3456789',
     '1992-11-08',
     10.00,
     80000.00,
     'Meets Expectations'
 FROM users u
-WHERE u.employee_id = '102'
+WHERE u.employee_id = 'EMP002'
 ON CONFLICT (user_id) DO NOTHING;

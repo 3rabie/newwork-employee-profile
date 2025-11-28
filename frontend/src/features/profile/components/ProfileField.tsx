@@ -6,7 +6,8 @@
  */
 
 import React from 'react';
-import { FieldMetadata, WorkLocationType, EmploymentStatus } from '../types';
+import type { FieldMetadata } from '../types';
+import { WorkLocationType, EmploymentStatus } from '../types';
 
 interface ProfileFieldProps {
   metadata: FieldMetadata;

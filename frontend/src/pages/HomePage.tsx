@@ -8,6 +8,8 @@ export function HomePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
+  const roleLabel = user?.role ?? 'UNKNOWN';
+  const roleClassSuffix = user?.role ? user.role.toLowerCase() : 'unknown';
 
   return (
     <div className="home-page">
@@ -17,8 +19,8 @@ export function HomePage() {
           <div className="header-actions">
             <div className="user-info">
               <span className="user-email">{user?.email}</span>
-              <span className={`user-role role-${user?.role.toLowerCase()}`}>
-                {user?.role}
+              <span className={`user-role role-${roleClassSuffix}`}>
+                {roleLabel}
               </span>
             </div>
             <button
