@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../auth/contexts/AuthContext';
 import ProfileSection from '../components/ProfileSection';
@@ -13,6 +14,22 @@ import { getProfile, updateProfile } from '../api/profileApi';
 import type { ProfileDTO, ProfileUpdateDTO, FieldMetadata } from '../types';
 import { FieldType } from '../types';
 import './ProfilePage.css';
+
+type ApiErrorResponse = {
+  message?: string;
+};
+
+const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  if (axios.isAxiosError<ApiErrorResponse>(error)) {
+    if (error.response?.data?.message) {
+      return error.response.data.message;
+    }
+    if (error.response?.status === 404) {
+      return 'Profile not found';
+    }
+  }
+  return fallbackMessage;
+};
 
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -40,8 +57,8 @@ const ProfilePage: React.FC = () => {
       setError(null);
       const data = await getProfile(id);
       setProfile(data);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load profile');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to load profile'));
     } finally {
       setLoading(false);
     }
@@ -70,8 +87,8 @@ const ProfilePage: React.FC = () => {
       setProfile(updated);
       setIsEditMode(false);
       setEditedProfile({});
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to save changes');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Failed to save changes'));
     } finally {
       setSaving(false);
     }
