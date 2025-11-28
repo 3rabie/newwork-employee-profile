@@ -1,0 +1,363 @@
+package com.newwork.employee.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.newwork.employee.dto.request.CreateFeedbackRequest;
+import com.newwork.employee.dto.request.LoginRequest;
+import com.newwork.employee.dto.response.AuthResponse;
+import com.newwork.employee.entity.EmployeeProfile;
+import com.newwork.employee.entity.Feedback;
+import com.newwork.employee.entity.User;
+import com.newwork.employee.entity.enums.EmploymentStatus;
+import com.newwork.employee.entity.enums.Role;
+import com.newwork.employee.entity.enums.WorkLocationType;
+import com.newwork.employee.repository.EmployeeProfileRepository;
+import com.newwork.employee.repository.FeedbackRepository;
+import com.newwork.employee.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+import static org.hamcrest.Matchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+@Testcontainers
+@DisplayName("FeedbackController Integration Tests")
+class FeedbackControllerIntegrationTest {
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EmployeeProfileRepository profileRepository;
+
+    @Autowired
+    private FeedbackRepository feedbackRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private User manager;
+    private User employee1;
+    private User employee2;
+    private String managerToken;
+    private String employee1Token;
+    private String employee2Token;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // Clear all data
+        feedbackRepository.deleteAll();
+        profileRepository.deleteAll();
+        userRepository.deleteAll();
+
+        // Create manager
+        manager = User.builder()
+                .employeeId("MGR-100")
+                .email("manager@test.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(Role.MANAGER)
+                .manager(null)
+                .build();
+        manager = userRepository.save(manager);
+
+        // Create employees reporting to manager
+        employee1 = User.builder()
+                .employeeId("EMP-101")
+                .email("emp1@test.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(Role.EMPLOYEE)
+                .manager(manager)
+                .build();
+        employee1 = userRepository.save(employee1);
+
+        employee2 = User.builder()
+                .employeeId("EMP-102")
+                .email("emp2@test.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(Role.EMPLOYEE)
+                .manager(manager)
+                .build();
+        employee2 = userRepository.save(employee2);
+
+        // Create profiles
+        createProfile(manager, "Test Manager");
+        createProfile(employee1, "Test Employee 1");
+        createProfile(employee2, "Test Employee 2");
+
+        // Get authentication tokens
+        managerToken = getAuthToken("manager@test.com", "password123");
+        employee1Token = getAuthToken("emp1@test.com", "password123");
+        employee2Token = getAuthToken("emp2@test.com", "password123");
+    }
+
+    private void createProfile(User user, String preferredName) {
+        profileRepository.save(EmployeeProfile.builder()
+                .user(user)
+                .legalFirstName("First")
+                .legalLastName("Last")
+                .department("Engineering")
+                .jobCode("JOB-001")
+                .jobFamily("Engineering")
+                .jobLevel("Senior")
+                .employmentStatus(EmploymentStatus.ACTIVE)
+                .hireDate(LocalDate.of(2020, 1, 1))
+                .fte(new BigDecimal("1.00"))
+                .preferredName(preferredName)
+                .jobTitle("Engineer")
+                .officeLocation("New York")
+                .workPhone("+1-555-0100")
+                .workLocationType(WorkLocationType.HYBRID)
+                .build());
+    }
+
+    private String getAuthToken(String email, String password) throws Exception {
+        LoginRequest loginRequest = new LoginRequest(email, password);
+
+        MvcResult result = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        AuthResponse response = objectMapper.readValue(
+                result.getResponse().getContentAsString(),
+                AuthResponse.class
+        );
+        return response.getToken();
+    }
+
+    @Test
+    @DisplayName("Should create feedback successfully")
+    void shouldCreateFeedbackSuccessfully() throws Exception {
+        // Given
+        CreateFeedbackRequest request = new CreateFeedbackRequest();
+        request.setRecipientId(employee2.getId());
+        request.setText("Great work on the project!");
+        request.setAiPolished(false);
+
+        // When/Then
+        mockMvc.perform(post("/api/feedback")
+                        .header("Authorization", "Bearer " + employee1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.authorId").value(employee1.getId().toString()))
+                .andExpect(jsonPath("$.authorName").value("Test Employee 1"))
+                .andExpect(jsonPath("$.recipientId").value(employee2.getId().toString()))
+                .andExpect(jsonPath("$.recipientName").value("Test Employee 2"))
+                .andExpect(jsonPath("$.text").value("Great work on the project!"))
+                .andExpect(jsonPath("$.aiPolished").value(false))
+                .andExpect(jsonPath("$.createdAt").exists());
+    }
+
+    @Test
+    @DisplayName("Should fail to create feedback to self")
+    void shouldFailToCreateFeedbackToSelf() throws Exception {
+        // Given
+        CreateFeedbackRequest request = new CreateFeedbackRequest();
+        request.setRecipientId(employee1.getId()); // Same as author
+        request.setText("I'm great!");
+
+        // When/Then
+        mockMvc.perform(post("/api/feedback")
+                        .header("Authorization", "Bearer " + employee1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("Should fail to create feedback without authentication")
+    void shouldFailToCreateFeedbackWithoutAuth() throws Exception {
+        // Given
+        CreateFeedbackRequest request = new CreateFeedbackRequest();
+        request.setRecipientId(employee2.getId());
+        request.setText("Great work!");
+
+        // When/Then
+        mockMvc.perform(post("/api/feedback")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden()); // 403 for missing auth token
+    }
+
+    @Test
+    @DisplayName("Should get feedback for profile - author can see their feedback")
+    void shouldGetFeedbackForProfileAsAuthor() throws Exception {
+        // Given - employee1 gives feedback to employee2
+        Feedback feedback = new Feedback();
+        feedback.setAuthor(employee1);
+        feedback.setRecipient(employee2);
+        feedback.setText("Great work!");
+        feedback.setAiPolished(false);
+        feedbackRepository.save(feedback);
+
+        // When/Then - employee1 views feedback about employee2
+        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
+                        .header("Authorization", "Bearer " + employee1Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].text").value("Great work!"));
+    }
+
+    @Test
+    @DisplayName("Should get feedback for profile - recipient can see their feedback")
+    void shouldGetFeedbackForProfileAsRecipient() throws Exception {
+        // Given - employee1 gives feedback to employee2
+        Feedback feedback = new Feedback();
+        feedback.setAuthor(employee1);
+        feedback.setRecipient(employee2);
+        feedback.setText("Great work!");
+        feedback.setAiPolished(false);
+        feedbackRepository.save(feedback);
+
+        // When/Then - employee2 views feedback about themselves
+        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
+                        .header("Authorization", "Bearer " + employee2Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].text").value("Great work!"));
+    }
+
+    @Test
+    @DisplayName("Should get feedback for profile - manager can see feedback about direct reports")
+    void shouldGetFeedbackForProfileAsManager() throws Exception {
+        // Given - employee1 gives feedback to employee2 (both report to manager)
+        Feedback feedback = new Feedback();
+        feedback.setAuthor(employee1);
+        feedback.setRecipient(employee2);
+        feedback.setText("Great work!");
+        feedback.setAiPolished(false);
+        feedbackRepository.save(feedback);
+
+        // When/Then - manager views feedback about employee2
+        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
+                        .header("Authorization", "Bearer " + managerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].text").value("Great work!"));
+    }
+
+    @Test
+    @DisplayName("Should not see feedback when not author, recipient, or manager")
+    void shouldNotSeeFeedbackWithoutPermission() throws Exception {
+        // Given - Create a third employee not managed by same manager
+        User employee3 = User.builder()
+                .employeeId("EMP-103")
+                .email("emp3@test.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(Role.EMPLOYEE)
+                .manager(null) // Different manager
+                .build();
+        employee3 = userRepository.save(employee3);
+        createProfile(employee3, "Test Employee 3");
+        String employee3Token = getAuthToken("emp3@test.com", "password123");
+
+        // employee1 gives feedback to employee2
+        Feedback feedback = new Feedback();
+        feedback.setAuthor(employee1);
+        feedback.setRecipient(employee2);
+        feedback.setText("Great work!");
+        feedback.setAiPolished(false);
+        feedbackRepository.save(feedback);
+
+        // When/Then - employee3 tries to view feedback about employee2
+        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
+                        .header("Authorization", "Bearer " + employee3Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0))); // Should see no feedback
+    }
+
+    @Test
+    @DisplayName("Should get authored feedback")
+    void shouldGetAuthoredFeedback() throws Exception {
+        // Given - employee1 gives feedback to employee2
+        Feedback feedback = new Feedback();
+        feedback.setAuthor(employee1);
+        feedback.setRecipient(employee2);
+        feedback.setText("Great work!");
+        feedback.setAiPolished(false);
+        feedbackRepository.save(feedback);
+
+        // When/Then - employee1 gets their authored feedback
+        mockMvc.perform(get("/api/feedback/authored")
+                        .header("Authorization", "Bearer " + employee1Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].authorId").value(employee1.getId().toString()))
+                .andExpect(jsonPath("$[0].text").value("Great work!"));
+    }
+
+    @Test
+    @DisplayName("Should get received feedback")
+    void shouldGetReceivedFeedback() throws Exception {
+        // Given - employee1 gives feedback to employee2
+        Feedback feedback = new Feedback();
+        feedback.setAuthor(employee1);
+        feedback.setRecipient(employee2);
+        feedback.setText("Great work!");
+        feedback.setAiPolished(false);
+        feedbackRepository.save(feedback);
+
+        // When/Then - employee2 gets their received feedback
+        mockMvc.perform(get("/api/feedback/received")
+                        .header("Authorization", "Bearer " + employee2Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].recipientId").value(employee2.getId().toString()))
+                .andExpect(jsonPath("$[0].text").value("Great work!"));
+    }
+
+    @Test
+    @DisplayName("Should validate required fields when creating feedback")
+    void shouldValidateRequiredFieldsWhenCreating() throws Exception {
+        // Given - Invalid request with missing fields
+        CreateFeedbackRequest request = new CreateFeedbackRequest();
+        // recipientId and text are null
+
+        // When/Then
+        mockMvc.perform(post("/api/feedback")
+                        .header("Authorization", "Bearer " + employee1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no feedback exists")
+    void shouldReturnEmptyListWhenNoFeedbackExists() throws Exception {
+        // When/Then - Get authored feedback with no feedback in database
+        mockMvc.perform(get("/api/feedback/authored")
+                        .header("Authorization", "Bearer " + employee1Token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+}
