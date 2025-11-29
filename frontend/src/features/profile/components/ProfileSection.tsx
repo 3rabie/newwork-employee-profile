@@ -15,6 +15,7 @@ interface ProfileSectionProps {
   profile: ProfileDTO;
   isEditMode: boolean;
   onChange?: (key: string, value: string) => void;
+  fieldErrors?: Record<string, string>;
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({
@@ -22,7 +23,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
   fields,
   profile,
   isEditMode,
-  onChange
+  onChange,
+  fieldErrors = {}
 }) => {
   // Filter out fields that have no value and aren't editable
   const visibleFields = fields.filter((field) => {
@@ -45,6 +47,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
             value={profile[field.key]}
             isEditMode={isEditMode}
             onChange={onChange}
+            error={fieldErrors[field.key as string]}
           />
         ))}
       </div>

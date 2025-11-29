@@ -5,6 +5,7 @@ import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.Feedback;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.repository.EmployeeProfileRepository;
+import com.newwork.employee.util.DateTimeUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -36,7 +37,7 @@ public class FeedbackMapper {
         dto.setRecipientName(getDisplayName(feedback.getRecipient()));
         dto.setText(feedback.getText());
         dto.setAiPolished(feedback.getAiPolished());
-        dto.setCreatedAt(feedback.getCreatedAt());
+        dto.setCreatedAt(DateTimeUtil.toOffset(feedback.getCreatedAt()));
 
         return dto;
     }
@@ -60,4 +61,5 @@ public class FeedbackMapper {
         }
         return profile.getLegalFirstName() + " " + profile.getLegalLastName();
     }
+
 }

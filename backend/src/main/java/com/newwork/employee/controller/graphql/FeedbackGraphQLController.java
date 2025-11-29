@@ -3,8 +3,6 @@ package com.newwork.employee.controller.graphql;
 import com.newwork.employee.dto.FeedbackDTO;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.User;
-import com.newwork.employee.repository.EmployeeProfileRepository;
-import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.security.AuthenticatedUser;
 import com.newwork.employee.service.FeedbackService;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +26,6 @@ import java.util.concurrent.CompletableFuture;
 public class FeedbackGraphQLController {
 
     private final FeedbackService feedbackService;
-    private final UserRepository userRepository;
-    private final EmployeeProfileRepository profileRepository;
 
     @QueryMapping
     public List<FeedbackDTO> feedbackForUser(@Argument UUID userId) {

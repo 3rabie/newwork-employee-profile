@@ -4,6 +4,7 @@ import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.enums.FieldType;
 import com.newwork.employee.entity.enums.Relationship;
+import com.newwork.employee.util.DateTimeUtil;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,8 +43,8 @@ public class ProfileMapper {
                 .userId(profile.getUser().getId())
                 .email(profile.getUser().getEmail())
                 .employeeId(profile.getUser().getEmployeeId())
-                .createdAt(profile.getCreatedAt())
-                .updatedAt(profile.getUpdatedAt());
+                .createdAt(DateTimeUtil.toOffset(profile.getCreatedAt()))
+                .updatedAt(DateTimeUtil.toOffset(profile.getUpdatedAt()));
 
         // SYSTEM_MANAGED fields - visible to everyone (SELF, MANAGER, COWORKER)
         if (canView(relationship, FieldType.SYSTEM_MANAGED)) {

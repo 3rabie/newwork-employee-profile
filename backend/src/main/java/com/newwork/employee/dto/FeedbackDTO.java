@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
@@ -54,5 +54,5 @@ public class FeedbackDTO {
     /**
      * Timestamp when the feedback was created
      */
-    private LocalDateTime createdAt;
+    private OffsetDateTime createdAt;
 }

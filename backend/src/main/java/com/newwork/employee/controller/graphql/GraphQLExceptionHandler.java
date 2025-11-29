@@ -10,6 +10,8 @@ import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter
 import org.springframework.graphql.execution.ErrorType;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 /**
  * Maps domain exceptions to GraphQL errors with appropriate error types and messages.
  */
@@ -20,20 +22,22 @@ public class GraphQLExceptionHandler extends DataFetcherExceptionResolverAdapter
     @Override
     protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
         if (ex instanceof ResourceNotFoundException) {
-            return GraphqlErrorBuilder.newError(env)
-                    .message(ex.getMessage())
-                    .errorType(ErrorType.NOT_FOUND)
-                    .build();
+            return buildError(env, ex.getMessage(), ErrorType.NOT_FOUND);
         }
 
         if (ex instanceof ForbiddenException) {
-            return GraphqlErrorBuilder.newError(env)
-                    .message(ex.getMessage())
-                    .errorType(ErrorType.FORBIDDEN)
-                    .build();
+            return buildError(env, ex.getMessage(), ErrorType.FORBIDDEN);
         }
 
         // Let Spring GraphQL handle other exceptions
         return null;
+    }
+
+    private GraphQLError buildError(DataFetchingEnvironment env, String message, ErrorType type) {
+        return GraphqlErrorBuilder.newError(env)
+                .message(message)
+                .errorType(type)
+                .extensions(Map.of("errorType", type.toString()))
+                .build();
     }
 }

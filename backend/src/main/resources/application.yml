@@ -55,4 +55,4 @@ app:
       allowed-headers: ${APP_SECURITY_ALLOWED_HEADERS:*}
       allow-credentials: ${APP_SECURITY_ALLOW_CREDENTIALS:true}
     demo:
-      switch-user-enabled: ${APP_SECURITY_SWITCH_USER_ENABLED:false}
+      switch-user-enabled: ${APP_SECURITY_SWITCH_USER_ENABLED:true}

@@ -42,6 +42,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const isSelf = user?.userId === userId;
 
@@ -67,27 +68,97 @@ const ProfilePage: React.FC = () => {
   const handleEdit = () => {
     setIsEditMode(true);
     setEditedProfile({});
+    setFieldErrors({});
   };
 
   const handleCancel = () => {
     setIsEditMode(false);
     setEditedProfile({});
+    setFieldErrors({});
+  };
+
+  const validateProfileUpdates = (updates: ProfileUpdateDTO) => {
+    const errors: Record<string, string> = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const urlRegex = /^https?:\/\/.+/i;
+
+    if (updates.preferredName && updates.preferredName.trim().length < 2) {
+      errors.preferredName = 'Preferred name must be at least 2 characters.';
+    }
+
+    if (updates.personalEmail && !emailRegex.test(updates.personalEmail)) {
+      errors.personalEmail = 'Enter a valid email address.';
+    }
+
+    if (updates.profilePhotoUrl && !urlRegex.test(updates.profilePhotoUrl)) {
+      errors.profilePhotoUrl = 'Enter a valid URL starting with http or https.';
+    }
+
+    const phoneFields: Array<keyof ProfileUpdateDTO> = [
+      'workPhone',
+      'personalPhone',
+      'emergencyContactPhone'
+    ];
+
+    phoneFields.forEach((field) => {
+      const value = updates[field];
+      if (value && value.replace(/\D/g, '').length < 7) {
+        errors[field as string] = 'Enter at least 7 digits.';
+      }
+    });
+
+    if (updates.dateOfBirth) {
+      const dateValue = new Date(updates.dateOfBirth);
+      if (Number.isNaN(dateValue.getTime()) || dateValue > new Date()) {
+        errors.dateOfBirth = 'Date of birth must be in the past.';
+      }
+    }
+
+    if (updates.bio && updates.bio.length > 1000) {
+      errors.bio = 'Bio must be 1000 characters or fewer.';
+    }
+
+    if (updates.skills && updates.skills.length > 1000) {
+      errors.skills = 'Skills must be 1000 characters or fewer.';
+    }
+
+    return errors;
   };
 
   const handleSave = async () => {
     if (!userId || Object.keys(editedProfile).length === 0) {
       setIsEditMode(false);
+      setFieldErrors({});
       return;
     }
+
+    const validationErrors = validateProfileUpdates(editedProfile);
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      setError('Please fix the highlighted fields.');
+      return;
+    }
+
+    const pendingUpdates = editedProfile;
+    const previousProfile = profile;
 
     try {
       setSaving(true);
       setError(null);
-      const updated = await updateProfile(userId, editedProfile);
-      setProfile(updated);
+      setFieldErrors({});
+      if (previousProfile) {
+        setProfile({ ...previousProfile, ...pendingUpdates });
+      }
       setIsEditMode(false);
       setEditedProfile({});
+      const updated = await updateProfile(userId, pendingUpdates);
+      setProfile(updated);
     } catch (err: unknown) {
+      if (previousProfile) {
+        setProfile(previousProfile);
+      }
+      setEditedProfile(pendingUpdates);
+      setIsEditMode(true);
       setError(getErrorMessage(err, 'Failed to save changes'));
     } finally {
       setSaving(false);
@@ -99,6 +170,13 @@ const ProfilePage: React.FC = () => {
       ...prev,
       [key]: value
     }));
+    setFieldErrors((prev) => {
+      if (!prev[key]) {
+        return prev;
+      }
+      const { [key]: _, ...rest } = prev;
+      return rest;
+    });
   };
 
   // Field metadata for all profile fields
@@ -172,7 +250,7 @@ const ProfilePage: React.FC = () => {
   const displayProfile = {
     ...profile,
     ...Object.fromEntries(
-      Object.entries(editedProfile).filter(([_, value]) => value !== undefined && value !== '')
+      Object.entries(editedProfile).filter(([_, value]) => value !== undefined)
     )
   };
 
@@ -223,6 +301,7 @@ const ProfilePage: React.FC = () => {
           profile={displayProfile}
           isEditMode={isEditMode}
           onChange={handleFieldChange}
+          fieldErrors={fieldErrors}
         />
 
         <ProfileSection
@@ -231,6 +310,7 @@ const ProfilePage: React.FC = () => {
           profile={displayProfile}
           isEditMode={isEditMode}
           onChange={handleFieldChange}
+          fieldErrors={fieldErrors}
         />
 
         <ProfileSection
@@ -239,6 +319,7 @@ const ProfilePage: React.FC = () => {
           profile={displayProfile}
           isEditMode={isEditMode}
           onChange={handleFieldChange}
+          fieldErrors={fieldErrors}
         />
       </div>
     </div>

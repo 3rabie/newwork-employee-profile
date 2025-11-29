@@ -14,13 +14,15 @@ interface ProfileFieldProps {
   value: string | number | undefined | null;
   isEditMode: boolean;
   onChange?: (key: string, value: string) => void;
+  error?: string;
 }
 
 const ProfileField: React.FC<ProfileFieldProps> = ({
   metadata,
   value,
   isEditMode,
-  onChange
+  onChange,
+  error
 }) => {
   const displayValue = value ?? 'N/A';
 
@@ -150,6 +152,7 @@ const ProfileField: React.FC<ProfileFieldProps> = ({
     <div className="profile-field">
       <label className="profile-field-label">{metadata.label}</label>
       {renderInput()}
+      {error && <p className="profile-field-error">{error}</p>}
     </div>
   );
 };

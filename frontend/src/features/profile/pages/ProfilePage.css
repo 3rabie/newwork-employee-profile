@@ -141,6 +141,12 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.profile-field-error {
+  margin-top: -0.25rem;
+  color: #c62828;
+  font-size: 0.85rem;
+}
+
 .profile-field-textarea {
   resize: vertical;
   min-height: 100px;

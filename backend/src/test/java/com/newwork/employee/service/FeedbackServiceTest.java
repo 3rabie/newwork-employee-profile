@@ -21,6 +21,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -112,7 +114,7 @@ class FeedbackServiceTest {
         feedbackDTO.setRecipientName("Test Employee 2");
         feedbackDTO.setText(feedback.getText());
         feedbackDTO.setAiPolished(false);
-        feedbackDTO.setCreatedAt(feedback.getCreatedAt());
+        feedbackDTO.setCreatedAt(OffsetDateTime.of(feedback.getCreatedAt(), ZoneOffset.UTC));
     }
 
     @Nested
