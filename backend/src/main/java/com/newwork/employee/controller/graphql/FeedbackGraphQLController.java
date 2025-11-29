@@ -5,6 +5,7 @@ import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
+import com.newwork.employee.security.AuthenticatedUser;
 import com.newwork.employee.service.FeedbackService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -65,9 +66,13 @@ public class FeedbackGraphQLController {
 
     private UUID extractUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null) {
+        if (authentication == null || authentication.getPrincipal() == null) {
             throw new IllegalStateException("Unauthenticated access to GraphQL feedback query");
         }
-        return UUID.fromString(authentication.getName());
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof AuthenticatedUser authenticatedUser) {
+            return authenticatedUser.getUserId();
+        }
+        throw new IllegalStateException("Unsupported principal type: " + principal.getClass());
     }
 }

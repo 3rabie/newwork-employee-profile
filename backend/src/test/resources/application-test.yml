@@ -1,24 +1,4 @@
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: true
-  flyway:
-    enabled: false
-
-jwt:
-  secret: test-secret-key-for-testing-purposes-minimum-256-bits-required-for-hmac-sha256
-  expiration: 3600000
-
-logging:
-  level:
-    com.newwork.employee: DEBUG
-    org.springframework.security: DEBUG
+app:
+  security:
+    demo:
+      switch-user-enabled: true

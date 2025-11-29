@@ -2,6 +2,7 @@ package com.newwork.employee.controller.rest;
 
 import com.newwork.employee.dto.FeedbackDTO;
 import com.newwork.employee.dto.request.CreateFeedbackRequest;
+import com.newwork.employee.security.AuthenticatedUser;
 import com.newwork.employee.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -61,10 +61,9 @@ public class FeedbackController {
             @ApiResponse(responseCode = "404", description = "Recipient not found")
     })
     public ResponseEntity<FeedbackDTO> createFeedback(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @Valid @RequestBody CreateFeedbackRequest request) {
-        UUID authorId = UUID.fromString(userDetails.getUsername());
-        FeedbackDTO feedback = feedbackService.createFeedback(authorId, request);
+        FeedbackDTO feedback = feedbackService.createFeedback(authenticatedUser.getUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(feedback);
     }
 }

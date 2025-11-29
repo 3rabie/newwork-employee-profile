@@ -2,6 +2,7 @@ package com.newwork.employee.controller.rest;
 
 import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.dto.ProfileUpdateDTO;
+import com.newwork.employee.security.AuthenticatedUser;
 import com.newwork.employee.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -14,7 +15,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -62,12 +62,11 @@ public class ProfileController {
             @ApiResponse(responseCode = "404", description = "Profile not found")
     })
     public ResponseEntity<ProfileDTO> updateProfile(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
             @PathVariable UUID userId,
             @Valid @RequestBody ProfileUpdateDTO updateDTO
     ) {
-        UUID viewerId = UUID.fromString(userDetails.getUsername());
-        ProfileDTO updated = profileService.updateProfile(viewerId, userId, updateDTO);
+        ProfileDTO updated = profileService.updateProfile(authenticatedUser.getUserId(), userId, updateDTO);
         return ResponseEntity.ok(updated);
     }
 }

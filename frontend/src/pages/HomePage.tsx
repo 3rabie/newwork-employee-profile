@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../features/auth/contexts/AuthContext';
 import { SwitchUserDialog } from '../features/auth/components/SwitchUserDialog';
+import { featureFlags } from '../config';
 import './HomePage.css';
 
 export function HomePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
+  const switchUserEnabled = featureFlags.switchUser;
   const roleLabel = user?.role ?? 'UNKNOWN';
   const roleClassSuffix = user?.role ? user.role.toLowerCase() : 'unknown';
 
@@ -23,12 +25,14 @@ export function HomePage() {
                 {roleLabel}
               </span>
             </div>
-            <button
-              className="btn-switch"
-              onClick={() => setIsSwitchDialogOpen(true)}
-            >
-              Switch User
-            </button>
+            {switchUserEnabled && (
+              <button
+                className="btn-switch"
+                onClick={() => setIsSwitchDialogOpen(true)}
+              >
+                Switch User
+              </button>
+            )}
             <button className="btn-logout" onClick={logout}>
               Logout
             </button>
@@ -67,10 +71,12 @@ export function HomePage() {
         </div>
       </main>
 
-      <SwitchUserDialog
-        isOpen={isSwitchDialogOpen}
-        onClose={() => setIsSwitchDialogOpen(false)}
-      />
+      {switchUserEnabled && (
+        <SwitchUserDialog
+          isOpen={isSwitchDialogOpen}
+          onClose={() => setIsSwitchDialogOpen(false)}
+        />
+      )}
     </div>
   );
 }

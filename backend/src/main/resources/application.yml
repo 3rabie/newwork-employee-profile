@@ -46,3 +46,13 @@ logging:
   level:
     com.newwork.employee: DEBUG
     org.springframework.security: DEBUG
+
+app:
+  security:
+    cors:
+      allowed-origins: ${APP_SECURITY_ALLOWED_ORIGINS:http://localhost:5173}
+      allowed-methods: ${APP_SECURITY_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+      allowed-headers: ${APP_SECURITY_ALLOWED_HEADERS:*}
+      allow-credentials: ${APP_SECURITY_ALLOW_CREDENTIALS:true}
+    demo:
+      switch-user-enabled: ${APP_SECURITY_SWITCH_USER_ENABLED:false}

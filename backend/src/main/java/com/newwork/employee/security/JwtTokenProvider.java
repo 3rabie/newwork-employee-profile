@@ -66,25 +66,33 @@ public class JwtTokenProvider {
      * Extract user ID from JWT token
      */
     public UUID getUserIdFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-
-        return UUID.fromString(claims.getSubject());
+        return UUID.fromString(getClaims(token).getSubject());
     }
 
     /**
      * Extract email from JWT token
      */
     public String getEmailFromToken(String token) {
-        Claims claims = Jwts.parser()
+        return getClaims(token).get("email", String.class);
+    }
+
+    public String getEmployeeIdFromToken(String token) {
+        return getClaims(token).get("employeeId", String.class);
+    }
+
+    public String getRoleFromToken(String token) {
+        return getClaims(token).get("role", String.class);
+    }
+
+    public String getManagerIdFromToken(String token) {
+        return getClaims(token).get("managerId", String.class);
+    }
+
+    public Claims getClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
-        return claims.get("email", String.class);
     }
 }

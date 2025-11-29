@@ -49,6 +49,7 @@ class FeedbackServiceTest {
     private User author;
     private User recipient;
     private User manager;
+    private User unrelatedViewer;
     private Feedback feedback;
     private FeedbackDTO feedbackDTO;
 
@@ -82,6 +83,15 @@ class FeedbackServiceTest {
                 .password("hashedPassword")
                 .role(Role.EMPLOYEE)
                 .manager(manager)
+                .build();
+
+        unrelatedViewer = User.builder()
+                .id(UUID.randomUUID())
+                .employeeId("EMP003")
+                .email("unrelated@company.com")
+                .password("hashedPassword")
+                .role(Role.EMPLOYEE)
+                .manager(null)
                 .build();
 
         // Setup feedback entity
@@ -221,8 +231,10 @@ class FeedbackServiceTest {
         @DisplayName("Should get visible feedback for user")
         void shouldGetVisibleFeedbackForUser() {
             // Given
-            when(userRepository.existsById(author.getId())).thenReturn(true);
-            when(userRepository.existsById(recipient.getId())).thenReturn(true);
+            when(userRepository.findById(author.getId())).thenReturn(Optional.of(author));
+            when(userRepository.findById(recipient.getId())).thenReturn(Optional.of(recipient));
+            when(feedbackRepository.existsByAuthorIdAndRecipientId(author.getId(), recipient.getId()))
+                    .thenReturn(true);
             when(feedbackRepository.findVisibleFeedbackForUser(author.getId(), recipient.getId()))
                     .thenReturn(List.of(feedback));
             when(feedbackMapper.toDTO(feedback)).thenReturn(feedbackDTO);
@@ -239,7 +251,7 @@ class FeedbackServiceTest {
         @DisplayName("Should throw exception when viewer not found")
         void shouldThrowExceptionWhenViewerNotFound() {
             // Given
-            when(userRepository.existsById(author.getId())).thenReturn(false);
+            when(userRepository.findById(author.getId())).thenReturn(Optional.empty());
 
             // When/Then
             assertThatThrownBy(() -> feedbackService.getFeedbackForUser(author.getId(), recipient.getId()))
@@ -251,8 +263,8 @@ class FeedbackServiceTest {
         @DisplayName("Should throw exception when user not found")
         void shouldThrowExceptionWhenUserNotFound() {
             // Given
-            when(userRepository.existsById(author.getId())).thenReturn(true);
-            when(userRepository.existsById(recipient.getId())).thenReturn(false);
+            when(userRepository.findById(author.getId())).thenReturn(Optional.of(author));
+            when(userRepository.findById(recipient.getId())).thenReturn(Optional.empty());
 
             // When/Then
             assertThatThrownBy(() -> feedbackService.getFeedbackForUser(author.getId(), recipient.getId()))
@@ -261,16 +273,29 @@ class FeedbackServiceTest {
         }
 
         @Test
+        @DisplayName("Should throw Forbidden when viewer has no relationship")
+        void shouldThrowForbiddenWhenViewerHasNoAccess() {
+            when(userRepository.findById(unrelatedViewer.getId())).thenReturn(Optional.of(unrelatedViewer));
+            when(userRepository.findById(recipient.getId())).thenReturn(Optional.of(recipient));
+            when(feedbackRepository.existsByAuthorIdAndRecipientId(unrelatedViewer.getId(), recipient.getId()))
+                    .thenReturn(false);
+
+            assertThatThrownBy(() -> feedbackService.getFeedbackForUser(unrelatedViewer.getId(), recipient.getId()))
+                    .isInstanceOf(ForbiddenException.class)
+                    .hasMessageContaining("permission");
+        }
+
+        @Test
         @DisplayName("Should return empty list when no visible feedback exists")
         void shouldReturnEmptyListWhenNoFeedbackExists() {
             // Given
-            when(userRepository.existsById(author.getId())).thenReturn(true);
-            when(userRepository.existsById(recipient.getId())).thenReturn(true);
-            when(feedbackRepository.findVisibleFeedbackForUser(author.getId(), recipient.getId()))
+            when(userRepository.findById(manager.getId())).thenReturn(Optional.of(manager));
+            when(userRepository.findById(recipient.getId())).thenReturn(Optional.of(recipient));
+            when(feedbackRepository.findVisibleFeedbackForUser(manager.getId(), recipient.getId()))
                     .thenReturn(List.of());
 
             // When
-            List<FeedbackDTO> result = feedbackService.getFeedbackForUser(author.getId(), recipient.getId());
+            List<FeedbackDTO> result = feedbackService.getFeedbackForUser(manager.getId(), recipient.getId());
 
             // Then
             assertThat(result).isEmpty();

@@ -54,12 +54,13 @@ public class FeedbackServiceImpl implements FeedbackService {
     @Override
     @Transactional(readOnly = true)
     public List<FeedbackDTO> getFeedbackForUser(UUID viewerId, UUID userId) {
-        if (!userRepository.existsById(viewerId)) {
-            throw new ResourceNotFoundException("Viewer not found");
-        }
-        if (!userRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User not found");
-        }
+        User viewer = userRepository.findById(viewerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Viewer not found"));
+
+        User recipient = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        validateFeedbackVisibility(viewer, recipient);
 
         List<Feedback> feedbackList = feedbackRepository.findVisibleFeedbackForUser(viewerId, userId);
         return feedbackList.stream()
@@ -91,5 +92,22 @@ public class FeedbackServiceImpl implements FeedbackService {
         return feedbackList.stream()
                 .map(feedbackMapper::toDTO)
                 .toList();
+    }
+
+    private void validateFeedbackVisibility(User viewer, User recipient) {
+        UUID viewerId = viewer.getId();
+        UUID recipientId = recipient.getId();
+
+        boolean isSelf = viewerId.equals(recipientId);
+        boolean isManager = recipient.getManager() != null && recipient.getManager().getId().equals(viewerId);
+        boolean isAuthor = false;
+
+        if (!isSelf && !isManager) {
+            isAuthor = feedbackRepository.existsByAuthorIdAndRecipientId(viewerId, recipientId);
+        }
+
+        if (!(isSelf || isManager || isAuthor)) {
+            throw new ForbiddenException("You don't have permission to view feedback for this user");
+        }
     }
 }

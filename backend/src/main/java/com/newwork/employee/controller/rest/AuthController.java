@@ -1,8 +1,10 @@
 package com.newwork.employee.controller.rest;
 
+import com.newwork.employee.config.SecurityProperties;
 import com.newwork.employee.dto.request.LoginRequest;
 import com.newwork.employee.dto.request.SwitchUserRequest;
 import com.newwork.employee.dto.response.AuthResponse;
+import com.newwork.employee.exception.ForbiddenException;
 import com.newwork.employee.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final SecurityProperties securityProperties;
 
     /**
      * Authenticate user with email and password
@@ -99,6 +102,9 @@ public class AuthController {
     })
     @PostMapping("/switch-user")
     public ResponseEntity<AuthResponse> switchUser(@Valid @RequestBody SwitchUserRequest request) {
+        if (!securityProperties.getDemo().isSwitchUserEnabled()) {
+            throw new ForbiddenException("Switch-user feature is disabled");
+        }
         log.info("Switch user request received for email: {}", request.getEmail());
         AuthResponse response = authService.switchUser(request.getEmail());
         return ResponseEntity.ok(response);

@@ -7,16 +7,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
+import com.newwork.employee.entity.enums.Role;
+import io.jsonwebtoken.Claims;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -24,7 +25,6 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -36,15 +36,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-                String email = jwtTokenProvider.getEmailFromToken(jwt);
+                Claims claims = jwtTokenProvider.getClaims(jwt);
+                UUID userId = UUID.fromString(claims.getSubject());
+                String email = claims.get("email", String.class);
+                String employeeId = claims.get("employeeId", String.class);
+                String roleName = claims.get("role", String.class);
+                String managerId = claims.get("managerId", String.class);
 
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                AuthenticatedUser authenticatedUser = new AuthenticatedUser(
+                        userId,
+                        email,
+                        employeeId,
+                        Role.valueOf(roleName),
+                        managerId != null ? UUID.fromString(managerId) : null
+                );
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userDetails,
+                                authenticatedUser,
                                 null,
-                                userDetails.getAuthorities()
+                                authenticatedUser.getAuthorities()
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

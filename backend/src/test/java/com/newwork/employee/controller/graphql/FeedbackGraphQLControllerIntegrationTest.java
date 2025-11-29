@@ -274,7 +274,7 @@ class FeedbackGraphQLControllerIntegrationTest {
     }
 
     @Test
-    @DisplayName("Should not see feedback without permission via GraphQL")
+    @DisplayName("Should return forbidden error when viewer lacks permission via GraphQL")
     void shouldNotSeeFeedbackWithoutPermissionViaGraphQL() throws Exception {
         // Given - Create a third employee not managed by same manager
         User employee3 = User.builder()
@@ -306,7 +306,9 @@ class FeedbackGraphQLControllerIntegrationTest {
 
         performGraphQL(employee3Token, query)
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.feedbackForUser", hasSize(0)));
+                .andExpect(jsonPath("$.errors[0].message").value("You don't have permission to view feedback for this user"))
+                .andExpect(jsonPath("$.errors[0].extensions.errorType").value("FORBIDDEN"))
+                .andExpect(jsonPath("$.data.feedbackForUser").doesNotExist());
     }
 
     @Test

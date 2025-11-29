@@ -65,13 +65,9 @@ public interface FeedbackRepository extends JpaRepository<Feedback, UUID> {
     );
 
     /**
-     * Find all feedback written by a specific author about a specific recipient.
-     *
-     * @param authorId The UUID of the author
-     * @param recipientId The UUID of the recipient
-     * @return List of feedback from author to recipient
+     * Determine if a viewer has authored feedback for a specific recipient.
      */
-    List<Feedback> findByAuthorIdAndRecipientIdOrderByCreatedAtDesc(UUID authorId, UUID recipientId);
+    boolean existsByAuthorIdAndRecipientId(UUID authorId, UUID recipientId);
 
     /**
      * Count feedback received by a specific user.
