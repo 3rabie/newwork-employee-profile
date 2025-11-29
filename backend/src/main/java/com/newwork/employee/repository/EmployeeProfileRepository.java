@@ -32,7 +32,7 @@ public interface EmployeeProfileRepository extends JpaRepository<EmployeeProfile
      * @param userIds list of user IDs
      * @return list of profiles matching the user IDs
      */
-    @Query("SELECT p FROM EmployeeProfile p WHERE p.user.id IN :userIds")
+    @Query("SELECT p FROM EmployeeProfile p JOIN FETCH p.user WHERE p.user.id IN :userIds")
     List<EmployeeProfile> findAllByUserIdIn(@Param("userIds") List<UUID> userIds);
 
     /**

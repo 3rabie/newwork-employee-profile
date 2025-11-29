@@ -60,6 +60,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
+     * Run this filter on async dispatches so GraphQL async processing keeps the authentication.
+     */
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
+    }
+
+    /**
+     * Also filter error dispatches so authentication is preserved when the request
+     * is re-dispatched (common with async flows).
+     */
+    @Override
+    protected boolean shouldNotFilterErrorDispatch() {
+        return false;
+    }
+
+    /**
      * Extract JWT token from Authorization header
      */
     private String getJwtFromRequest(HttpServletRequest request) {

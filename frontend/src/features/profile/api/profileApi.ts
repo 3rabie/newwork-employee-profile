@@ -6,7 +6,7 @@
  */
 
 import { httpClient } from '../../../lib/http-client';
-import { graphqlClient } from '../../../lib/graphql-client';
+import { graphqlRequest } from '../../../lib/graphql-client';
 import { GET_PROFILE_QUERY } from '../../../lib/graphql-queries';
 import type { ProfileDTO, ProfileUpdateDTO } from '../types';
 
@@ -19,9 +19,10 @@ import type { ProfileDTO, ProfileUpdateDTO } from '../types';
  * @throws Error if profile not found or forbidden
  */
 export const getProfile = async (userId: string): Promise<ProfileDTO> => {
-  const data = await graphqlClient.request<{ profile: ProfileDTO }>(
+  const data = await graphqlRequest<{ profile: ProfileDTO }>(
     GET_PROFILE_QUERY,
-    { userId }
+    { userId },
+    'GetProfile'
   );
   return data.profile;
 };

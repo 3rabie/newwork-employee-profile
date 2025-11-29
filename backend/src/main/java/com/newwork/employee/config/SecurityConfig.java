@@ -4,6 +4,7 @@ import com.newwork.employee.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -48,6 +49,8 @@ public class SecurityConfig {
 
                 // Configure authorization
                 .authorizeHttpRequests(auth -> auth
+                        // Allow preflight requests for CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(
@@ -56,6 +59,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers("/error").permitAll()
+                        // GraphQL endpoint - requires authentication but handled by @AuthenticationPrincipal
+                        .requestMatchers("/graphql").authenticated()
 
                         // All other requests require authentication
                         .anyRequest().authenticated()

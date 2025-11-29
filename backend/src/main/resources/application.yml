@@ -28,6 +28,9 @@ spring:
     # Clean disabled for safety (never drop all objects)
     clean-disabled: true
 
+  graphql:
+    path: /graphql
+
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:secret-key-change-in-production-minimum-256-bits-required-for-hs256}

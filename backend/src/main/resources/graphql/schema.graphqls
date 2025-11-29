@@ -74,6 +74,12 @@ type Profile {
     """User ID this profile belongs to"""
     userId: UUID!
 
+    """When the profile was created"""
+    createdAt: DateTime
+
+    """When the profile was last updated"""
+    updatedAt: DateTime
+
     """Legal first name (always visible)"""
     legalFirstName: String!
 
@@ -88,6 +94,30 @@ type Profile {
 
     """Employee ID (always visible)"""
     employeeId: String!
+
+    """Department (SYSTEM_MANAGED - visible to all)"""
+    department: String
+
+    """Job code (SYSTEM_MANAGED - visible to all)"""
+    jobCode: String
+
+    """Job family (SYSTEM_MANAGED - visible to all)"""
+    jobFamily: String
+
+    """Job level (SYSTEM_MANAGED - visible to all)"""
+    jobLevel: String
+
+    """Employment status: ACTIVE, TERMINATED, etc (SYSTEM_MANAGED - visible to all)"""
+    employmentStatus: String
+
+    """Hire date (SYSTEM_MANAGED - visible to all)"""
+    hireDate: String
+
+    """Termination date (SYSTEM_MANAGED - visible to all)"""
+    terminationDate: String
+
+    """Full-time equivalent (SYSTEM_MANAGED - visible to all)"""
+    fte: Float
 
     """Job title (NON_SENSITIVE)"""
     jobTitle: String
@@ -104,8 +134,8 @@ type Profile {
     """Employee bio (NON_SENSITIVE)"""
     bio: String
 
-    """List of skills (NON_SENSITIVE)"""
-    skills: [String!]
+    """Skills as comma-separated string (NON_SENSITIVE)"""
+    skills: String
 
     """Profile photo URL (NON_SENSITIVE)"""
     profilePhotoUrl: String
@@ -133,6 +163,15 @@ type Profile {
 
     """Visa/work permit information (SENSITIVE - only visible to SELF)"""
     visaWorkPermit: String
+
+    """Absence balance in days (SENSITIVE - only visible to SELF and MANAGER)"""
+    absenceBalanceDays: Float
+
+    """Salary (SENSITIVE - only visible to SELF and MANAGER)"""
+    salary: Float
+
+    """Performance rating (SENSITIVE - only visible to SELF and MANAGER)"""
+    performanceRating: String
 
     """Field metadata indicating visibility and editability"""
     metadata: ProfileMetadata!

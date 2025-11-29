@@ -26,6 +26,8 @@ public class ProfileDTO {
     // Identity
     private UUID id;
     private UUID userId;
+    private String email;
+    private String employeeId;
 
     // ============================================
     // SYSTEM_MANAGED FIELDS
@@ -77,4 +79,5 @@ public class ProfileDTO {
     // Audit fields
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private ProfileMetadataDTO metadata;
 }

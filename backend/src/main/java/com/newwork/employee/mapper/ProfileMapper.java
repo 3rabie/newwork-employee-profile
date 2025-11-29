@@ -40,6 +40,8 @@ public class ProfileMapper {
         ProfileDTO.ProfileDTOBuilder builder = ProfileDTO.builder()
                 .id(profile.getId())
                 .userId(profile.getUser().getId())
+                .email(profile.getUser().getEmail())
+                .employeeId(profile.getUser().getEmployeeId())
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt());
 
