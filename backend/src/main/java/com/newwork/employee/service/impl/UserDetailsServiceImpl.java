@@ -1,4 +1,4 @@
-package com.newwork.employee.service;
+package com.newwork.employee.service.impl;
 
 import com.newwork.employee.entity.User;
 import com.newwork.employee.repository.UserRepository;

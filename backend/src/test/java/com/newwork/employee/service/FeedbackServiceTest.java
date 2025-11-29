@@ -10,6 +10,7 @@ import com.newwork.employee.exception.ResourceNotFoundException;
 import com.newwork.employee.mapper.FeedbackMapper;
 import com.newwork.employee.repository.FeedbackRepository;
 import com.newwork.employee.repository.UserRepository;
+import com.newwork.employee.service.impl.FeedbackServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -43,7 +44,7 @@ class FeedbackServiceTest {
     private FeedbackMapper feedbackMapper;
 
     @InjectMocks
-    private FeedbackService feedbackService;
+    private FeedbackServiceImpl feedbackService;
 
     private User author;
     private User recipient;

@@ -1,4 +1,4 @@
-package com.newwork.employee.controller;
+package com.newwork.employee.controller.rest;
 
 import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.dto.ProfileUpdateDTO;
@@ -56,22 +56,10 @@ public class ProfileController {
                     description = "Profile updated successfully",
                     content = @Content(schema = @Schema(implementation = ProfileDTO.class))
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid input - Validation failed"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized - Invalid or missing authentication token"
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Forbidden - User lacks permission to edit this profile"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Profile not found"
-            )
+            @ApiResponse(responseCode = "400", description = "Invalid input - Validation failed"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing authentication token"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - User lacks permission to edit this profile"),
+            @ApiResponse(responseCode = "404", description = "Profile not found")
     })
     public ResponseEntity<ProfileDTO> updateProfile(
             @AuthenticationPrincipal UserDetails userDetails,

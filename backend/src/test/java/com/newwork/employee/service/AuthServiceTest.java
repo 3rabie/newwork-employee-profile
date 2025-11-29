@@ -8,7 +8,9 @@ import com.newwork.employee.exception.InvalidCredentialsException;
 import com.newwork.employee.mapper.AuthMapper;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.security.JwtTokenProvider;
+import com.newwork.employee.service.impl.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -74,171 +76,148 @@ class AuthServiceTest {
                 .build();
     }
 
-    @Test
-    void login_WithValidCredentials_ReturnsAuthResponse() {
-        // Arrange
-        Authentication authentication = mock(Authentication.class);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-        when(userRepository.findByEmail(loginRequest.getEmail()))
-                .thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateToken(testUser))
-                .thenReturn("mock.jwt.token");
-        when(authMapper.toAuthResponse(testUser, "mock.jwt.token"))
-                .thenReturn(expectedResponse);
+    @Nested
+    @DisplayName("Login")
+    class LoginTests {
 
-        // Act
-        AuthResponse result = authService.login(loginRequest);
+        @Test
+        void withValidCredentials_ReturnsAuthResponse() {
+            Authentication authentication = mock(Authentication.class);
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(authentication);
+            when(userRepository.findByEmail(loginRequest.getEmail()))
+                    .thenReturn(Optional.of(testUser));
+            when(jwtTokenProvider.generateToken(testUser))
+                    .thenReturn("mock.jwt.token");
+            when(authMapper.toAuthResponse(testUser, "mock.jwt.token"))
+                    .thenReturn(expectedResponse);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedResponse.getToken(), result.getToken());
-        assertEquals(expectedResponse.getEmail(), result.getEmail());
-        assertEquals(expectedResponse.getUserId(), result.getUserId());
+            AuthResponse result = authService.login(loginRequest);
 
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userRepository).findByEmail(loginRequest.getEmail());
-        verify(jwtTokenProvider).generateToken(testUser);
-        verify(authMapper).toAuthResponse(testUser, "mock.jwt.token");
-    }
+            assertNotNull(result);
+            assertEquals(expectedResponse.getToken(), result.getToken());
+            assertEquals(expectedResponse.getEmail(), result.getEmail());
+            assertEquals(expectedResponse.getUserId(), result.getUserId());
 
-    @Test
-    void login_WithInvalidCredentials_ThrowsException() {
-        // Arrange
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenThrow(new BadCredentialsException("Invalid credentials"));
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+            verify(userRepository).findByEmail(loginRequest.getEmail());
+            verify(jwtTokenProvider).generateToken(testUser);
+            verify(authMapper).toAuthResponse(testUser, "mock.jwt.token");
+        }
 
-        // Act & Assert
-        assertThrows(InvalidCredentialsException.class, () -> {
+        @Test
+        void withInvalidCredentials_ThrowsException() {
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenThrow(new BadCredentialsException("Invalid credentials"));
+
+            assertThrows(InvalidCredentialsException.class, () -> authService.login(loginRequest));
+
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+            verify(userRepository, never()).findByEmail(any());
+            verify(jwtTokenProvider, never()).generateToken(any());
+        }
+
+        @Test
+        void whenUserNotFoundAfterAuth_ThrowsException() {
+            Authentication authentication = mock(Authentication.class);
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(authentication);
+            when(userRepository.findByEmail(loginRequest.getEmail()))
+                    .thenReturn(Optional.empty());
+
+            RuntimeException exception = assertThrows(RuntimeException.class, () -> authService.login(loginRequest));
+
+            assertTrue(exception.getMessage().contains("User not found"));
+            verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+            verify(userRepository).findByEmail(loginRequest.getEmail());
+            verify(jwtTokenProvider, never()).generateToken(any());
+        }
+
+        @Test
+        void callsAuthMapperWithCorrectParameters() {
+            Authentication authentication = mock(Authentication.class);
+            when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                    .thenReturn(authentication);
+            when(userRepository.findByEmail(loginRequest.getEmail()))
+                    .thenReturn(Optional.of(testUser));
+            when(jwtTokenProvider.generateToken(testUser))
+                    .thenReturn("generated.token.value");
+            when(authMapper.toAuthResponse(testUser, "generated.token.value"))
+                    .thenReturn(expectedResponse);
+
             authService.login(loginRequest);
-        });
 
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userRepository, never()).findByEmail(any());
-        verify(jwtTokenProvider, never()).generateToken(any());
+            verify(authMapper).toAuthResponse(eq(testUser), eq("generated.token.value"));
+        }
     }
 
-    @Test
-    void login_WhenUserNotFoundAfterAuth_ThrowsException() {
-        // Arrange
-        Authentication authentication = mock(Authentication.class);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-        when(userRepository.findByEmail(loginRequest.getEmail()))
-                .thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("Switch User")
+    class SwitchUserTests {
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            authService.login(loginRequest);
-        });
+        @Test
+        void withValidEmail_ReturnsAuthResponse() {
+            String email = "test.user@testcompany.com";
+            when(userRepository.findByEmail(email))
+                    .thenReturn(Optional.of(testUser));
+            when(jwtTokenProvider.generateToken(testUser))
+                    .thenReturn("mock.jwt.token");
+            when(authMapper.toAuthResponse(testUser, "mock.jwt.token"))
+                    .thenReturn(expectedResponse);
 
-        assertTrue(exception.getMessage().contains("User not found"));
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        verify(userRepository).findByEmail(loginRequest.getEmail());
-        verify(jwtTokenProvider, never()).generateToken(any());
-    }
+            AuthResponse result = authService.switchUser(email);
 
-    @Test
-    void switchUser_WithValidEmail_ReturnsAuthResponse() {
-        // Arrange
-        String email = "test.user@testcompany.com";
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateToken(testUser))
-                .thenReturn("mock.jwt.token");
-        when(authMapper.toAuthResponse(testUser, "mock.jwt.token"))
-                .thenReturn(expectedResponse);
+            assertNotNull(result);
+            assertEquals(expectedResponse.getToken(), result.getToken());
+            assertEquals(expectedResponse.getEmail(), result.getEmail());
 
-        // Act
-        AuthResponse result = authService.switchUser(email);
+            verify(userRepository).findByEmail(email);
+            verify(jwtTokenProvider).generateToken(testUser);
+            verify(authMapper).toAuthResponse(testUser, "mock.jwt.token");
+            verifyNoInteractions(authenticationManager);
+        }
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(expectedResponse.getToken(), result.getToken());
-        assertEquals(expectedResponse.getEmail(), result.getEmail());
+        @Test
+        void withNonExistentEmail_ThrowsException() {
+            String email = "nonexistent@testcompany.com";
+            when(userRepository.findByEmail(email))
+                    .thenReturn(Optional.empty());
 
-        verify(userRepository).findByEmail(email);
-        verify(jwtTokenProvider).generateToken(testUser);
-        verify(authMapper).toAuthResponse(testUser, "mock.jwt.token");
-        verifyNoInteractions(authenticationManager);
-    }
+            RuntimeException exception = assertThrows(RuntimeException.class, () -> authService.switchUser(email));
 
-    @Test
-    void switchUser_WithNonExistentEmail_ThrowsException() {
-        // Arrange
-        String email = "nonexistent@testcompany.com";
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.empty());
+            assertTrue(exception.getMessage().contains("User not found"));
+            verify(userRepository).findByEmail(email);
+            verify(jwtTokenProvider, never()).generateToken(any());
+        }
 
-        // Act & Assert
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+        @Test
+        void doesNotRequirePassword() {
+            String email = "test.user@testcompany.com";
+            when(userRepository.findByEmail(email))
+                    .thenReturn(Optional.of(testUser));
+            when(jwtTokenProvider.generateToken(testUser))
+                    .thenReturn("mock.jwt.token");
+            when(authMapper.toAuthResponse(testUser, "mock.jwt.token"))
+                    .thenReturn(expectedResponse);
+
             authService.switchUser(email);
-        });
 
-        assertTrue(exception.getMessage().contains("User not found"));
-        verify(userRepository).findByEmail(email);
-        verify(jwtTokenProvider, never()).generateToken(any());
-    }
+            verifyNoInteractions(authenticationManager);
+        }
 
-    @Test
-    void switchUser_DoesNotRequirePassword() {
-        // Arrange
-        String email = "test.user@testcompany.com";
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateToken(testUser))
-                .thenReturn("mock.jwt.token");
-        when(authMapper.toAuthResponse(testUser, "mock.jwt.token"))
-                .thenReturn(expectedResponse);
+        @Test
+        void callsAuthMapperWithCorrectParameters() {
+            String email = "test.user@testcompany.com";
+            when(userRepository.findByEmail(email))
+                    .thenReturn(Optional.of(testUser));
+            when(jwtTokenProvider.generateToken(testUser))
+                    .thenReturn("switched.token.value");
+            when(authMapper.toAuthResponse(testUser, "switched.token.value"))
+                    .thenReturn(expectedResponse);
 
-        // Act
-        authService.switchUser(email);
+            authService.switchUser(email);
 
-        // Assert - AuthenticationManager should NOT be called
-        verifyNoInteractions(authenticationManager);
-    }
-
-    @Test
-    void login_CallsAuthMapperWithCorrectParameters() {
-        // Arrange
-        Authentication authentication = mock(Authentication.class);
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-        when(userRepository.findByEmail(loginRequest.getEmail()))
-                .thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateToken(testUser))
-                .thenReturn("generated.token.value");
-        when(authMapper.toAuthResponse(testUser, "generated.token.value"))
-                .thenReturn(expectedResponse);
-
-        // Act
-        authService.login(loginRequest);
-
-        // Assert
-        verify(authMapper).toAuthResponse(
-                eq(testUser),
-                eq("generated.token.value")
-        );
-    }
-
-    @Test
-    void switchUser_CallsAuthMapperWithCorrectParameters() {
-        // Arrange
-        String email = "test.user@testcompany.com";
-        when(userRepository.findByEmail(email))
-                .thenReturn(Optional.of(testUser));
-        when(jwtTokenProvider.generateToken(testUser))
-                .thenReturn("switched.token.value");
-        when(authMapper.toAuthResponse(testUser, "switched.token.value"))
-                .thenReturn(expectedResponse);
-
-        // Act
-        authService.switchUser(email);
-
-        // Assert
-        verify(authMapper).toAuthResponse(
-                eq(testUser),
-                eq("switched.token.value")
-        );
+            verify(authMapper).toAuthResponse(eq(testUser), eq("switched.token.value"));
+        }
     }
 }

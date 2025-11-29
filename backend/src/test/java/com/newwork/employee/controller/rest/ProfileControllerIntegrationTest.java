@@ -159,76 +159,8 @@ class ProfileControllerIntegrationTest {
         return response.getToken();
     }
 
-    @Test
-    @DisplayName("Should get own profile with all fields (SELF)")
-    void shouldGetOwnProfileWithAllFields() throws Exception {
-        mockMvc.perform(get("/api/profiles/{userId}", employee1.getId())
-                        .header("Authorization", "Bearer " + employee1Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(employee1Profile.getId().toString()))
-                .andExpect(jsonPath("$.userId").value(employee1.getId().toString()))
-                // SYSTEM_MANAGED fields
-                .andExpect(jsonPath("$.legalFirstName").value("First_EMP-101"))
-                .andExpect(jsonPath("$.legalLastName").value("Last_EMP-101"))
-                .andExpect(jsonPath("$.department").value("Engineering"))
-                .andExpect(jsonPath("$.employmentStatus").value("ACTIVE"))
-                // NON_SENSITIVE fields
-                .andExpect(jsonPath("$.preferredName").value("Preferred_EMP-101"))
-                .andExpect(jsonPath("$.jobTitle").value("Senior Software Engineer"))
-                .andExpect(jsonPath("$.bio").value("Bio for EMP-101"))
-                // SENSITIVE fields (visible to SELF)
-                .andExpect(jsonPath("$.personalEmail").value("emp1.personal@test.com"))
-                .andExpect(jsonPath("$.salary").value(100000.00))
-                .andExpect(jsonPath("$.performanceRating").value("Exceeds Expectations"));
-    }
-
-    @Test
-    @DisplayName("Should get direct report profile with sensitive fields (MANAGER)")
-    void shouldGetDirectReportProfileWithSensitiveFields() throws Exception {
-        mockMvc.perform(get("/api/profiles/{userId}", employee1.getId())
-                        .header("Authorization", "Bearer " + managerToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(employee1.getId().toString()))
-                // SYSTEM_MANAGED fields (visible to MANAGER)
-                .andExpect(jsonPath("$.legalFirstName").value("First_EMP-101"))
-                .andExpect(jsonPath("$.department").value("Engineering"))
-                // NON_SENSITIVE fields (visible to MANAGER)
-                .andExpect(jsonPath("$.preferredName").value("Preferred_EMP-101"))
-                .andExpect(jsonPath("$.jobTitle").value("Senior Software Engineer"))
-                // SENSITIVE fields (visible to MANAGER for direct reports)
-                .andExpect(jsonPath("$.personalEmail").value("emp1.personal@test.com"))
-                .andExpect(jsonPath("$.salary").value(100000.00));
-    }
-
-    @Test
-    @DisplayName("Should get coworker profile without sensitive fields (COWORKER)")
-    void shouldGetCoworkerProfileWithoutSensitiveFields() throws Exception {
-        mockMvc.perform(get("/api/profiles/{userId}", employee2.getId())
-                        .header("Authorization", "Bearer " + employee1Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.userId").value(employee2.getId().toString()))
-                // SYSTEM_MANAGED fields (visible to COWORKER)
-                .andExpect(jsonPath("$.legalFirstName").value("First_EMP-102"))
-                .andExpect(jsonPath("$.department").value("Engineering"))
-                // NON_SENSITIVE fields (visible to COWORKER)
-                .andExpect(jsonPath("$.preferredName").value("Preferred_EMP-102"))
-                .andExpect(jsonPath("$.jobTitle").value("Software Engineer"))
-                // SENSITIVE fields (NOT visible to COWORKER)
-                .andExpect(jsonPath("$.personalEmail").doesNotExist())
-                .andExpect(jsonPath("$.salary").doesNotExist())
-                .andExpect(jsonPath("$.performanceRating").doesNotExist());
-    }
-
-    @Test
-    @DisplayName("Should return 404 when profile not found")
-    void shouldReturn404WhenProfileNotFound() throws Exception {
-        UUID nonExistentUserId = UUID.randomUUID();
-
-        mockMvc.perform(get("/api/profiles/{userId}", nonExistentUserId)
-                        .header("Authorization", "Bearer " + employee1Token))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value(containsString("Profile not found")));
-    }
+    // NOTE: GET endpoint tests removed - profile queries now use GraphQL
+    // See ProfileGraphQLControllerIntegrationTest for GraphQL query tests
 
     @Test
     @DisplayName("Should update own non-sensitive fields (SELF)")
@@ -342,18 +274,6 @@ class ProfileControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("Should return 403 when not authenticated")
-    void shouldReturn403WhenNotAuthenticated() throws Exception {
-        mockMvc.perform(get("/api/profiles/{userId}", employee1.getId()))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @DisplayName("Should return 403 when token is invalid")
-    void shouldReturn403WhenTokenIsInvalid() throws Exception {
-        mockMvc.perform(get("/api/profiles/{userId}", employee1.getId())
-                        .header("Authorization", "Bearer invalid-token"))
-                .andExpect(status().isForbidden());
-    }
+    // NOTE: Authentication tests for GET endpoints removed
+    // See ProfileGraphQLControllerIntegrationTest for GraphQL authentication tests
 }

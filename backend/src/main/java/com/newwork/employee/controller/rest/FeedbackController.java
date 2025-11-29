@@ -1,4 +1,4 @@
-package com.newwork.employee.controller;
+package com.newwork.employee.controller.rest;
 
 import com.newwork.employee.dto.FeedbackDTO;
 import com.newwork.employee.dto.request.CreateFeedbackRequest;
@@ -55,22 +55,10 @@ public class FeedbackController {
                     description = "Feedback created successfully",
                     content = @Content(schema = @Schema(implementation = FeedbackDTO.class))
             ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid input - Validation failed"
-            ),
-            @ApiResponse(
-                    responseCode = "401",
-                    description = "Unauthorized - Invalid or missing authentication token"
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Forbidden - Cannot give feedback to yourself"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Recipient not found"
-            )
+            @ApiResponse(responseCode = "400", description = "Invalid input - Validation failed"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - Invalid or missing authentication token"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - Cannot give feedback to yourself"),
+            @ApiResponse(responseCode = "404", description = "Recipient not found")
     })
     public ResponseEntity<FeedbackDTO> createFeedback(
             @AuthenticationPrincipal UserDetails userDetails,

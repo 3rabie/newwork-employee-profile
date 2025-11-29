@@ -14,8 +14,10 @@ import com.newwork.employee.exception.ResourceNotFoundException;
 import com.newwork.employee.mapper.ProfileMapper;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
+import com.newwork.employee.service.impl.ProfileServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,7 +51,7 @@ class ProfileServiceTest {
     private ProfileMapper profileMapper;
 
     @InjectMocks
-    private ProfileService profileService;
+    private ProfileServiceImpl profileService;
 
     private UUID viewerId;
     private UUID profileOwnerId;
@@ -95,251 +97,231 @@ class ProfileServiceTest {
                 .build();
     }
 
-    @Test
-    @DisplayName("Should get profile with SELF relationship")
-    void shouldGetProfileWithSelfRelationship() {
-        // Given
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
-                .thenReturn(Relationship.SELF);
-        when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+    @Nested
+    @DisplayName("Get Profile")
+    class GetProfileTests {
 
-        // When
-        ProfileDTO result = profileService.getProfile(profileOwnerId, profileOwnerId);
+        @Test
+        @DisplayName("Should get profile with SELF relationship")
+        void shouldGetProfileWithSelfRelationship() {
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
+                    .thenReturn(Relationship.SELF);
+            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
 
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(profile.getId());
-        verify(profileRepository).findByUserId(profileOwnerId);
-        verify(permissionService).determineRelationship(profileOwnerId, profileOwnerId);
-        verify(profileMapper).toDTO(profile, Relationship.SELF);
+            ProfileDTO result = profileService.getProfile(profileOwnerId, profileOwnerId);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo(profile.getId());
+            verify(profileRepository).findByUserId(profileOwnerId);
+            verify(permissionService).determineRelationship(profileOwnerId, profileOwnerId);
+            verify(profileMapper).toDTO(profile, Relationship.SELF);
+        }
+
+        @Test
+        @DisplayName("Should get profile with MANAGER relationship")
+        void shouldGetProfileWithManagerRelationship() {
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(viewerId, profileOwnerId))
+                    .thenReturn(Relationship.MANAGER);
+            when(profileMapper.toDTO(profile, Relationship.MANAGER)).thenReturn(profileDTO);
+
+            ProfileDTO result = profileService.getProfile(viewerId, profileOwnerId);
+
+            assertThat(result).isNotNull();
+            verify(permissionService).determineRelationship(viewerId, profileOwnerId);
+            verify(profileMapper).toDTO(profile, Relationship.MANAGER);
+        }
+
+        @Test
+        @DisplayName("Should get profile with COWORKER relationship")
+        void shouldGetProfileWithCoworkerRelationship() {
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(viewerId, profileOwnerId))
+                    .thenReturn(Relationship.COWORKER);
+            when(profileMapper.toDTO(profile, Relationship.COWORKER)).thenReturn(profileDTO);
+
+            ProfileDTO result = profileService.getProfile(viewerId, profileOwnerId);
+
+            assertThat(result).isNotNull();
+            verify(profileMapper).toDTO(profile, Relationship.COWORKER);
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when profile not found")
+        void shouldThrowExceptionWhenProfileNotFound() {
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> profileService.getProfile(viewerId, profileOwnerId))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Profile not found");
+        }
     }
 
-    @Test
-    @DisplayName("Should get profile with MANAGER relationship")
-    void shouldGetProfileWithManagerRelationship() {
-        // Given
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(viewerId, profileOwnerId))
-                .thenReturn(Relationship.MANAGER);
-        when(profileMapper.toDTO(profile, Relationship.MANAGER)).thenReturn(profileDTO);
+    @Nested
+    @DisplayName("Update Profile")
+    class UpdateProfileTests {
 
-        // When
-        ProfileDTO result = profileService.getProfile(viewerId, profileOwnerId);
+        @Test
+        @DisplayName("Should update non-sensitive fields as SELF")
+        void shouldUpdateNonSensitiveFieldsAsSelf() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .preferredName("Updated Name")
+                    .bio("Updated bio")
+                    .build();
 
-        // Then
-        assertThat(result).isNotNull();
-        verify(permissionService).determineRelationship(viewerId, profileOwnerId);
-        verify(profileMapper).toDTO(profile, Relationship.MANAGER);
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
+                    .thenReturn(Relationship.SELF);
+            when(permissionService.canEdit(Relationship.SELF, FieldType.NON_SENSITIVE)).thenReturn(true);
+            when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
+            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+
+            ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
+
+            assertThat(result).isNotNull();
+            verify(profileRepository).save(any(EmployeeProfile.class));
+            assertThat(profile.getPreferredName()).isEqualTo("Updated Name");
+            assertThat(profile.getBio()).isEqualTo("Updated bio");
+        }
+
+        @Test
+        @DisplayName("Should update sensitive fields as SELF")
+        void shouldUpdateSensitiveFieldsAsSelf() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .personalEmail("new.email@test.com")
+                    .personalPhone("+1-555-9999")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
+                    .thenReturn(Relationship.SELF);
+            when(permissionService.canEdit(Relationship.SELF, FieldType.SENSITIVE)).thenReturn(true);
+            when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
+            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+
+            ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
+
+            assertThat(result).isNotNull();
+            verify(profileRepository).save(any(EmployeeProfile.class));
+            assertThat(profile.getPersonalEmail()).isEqualTo("new.email@test.com");
+            assertThat(profile.getPersonalPhone()).isEqualTo("+1-555-9999");
+        }
+
+        @Test
+        @DisplayName("Should update non-sensitive fields as MANAGER for direct report")
+        void shouldUpdateNonSensitiveFieldsAsManager() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .jobTitle("Senior Software Engineer")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(viewerId, profileOwnerId))
+                    .thenReturn(Relationship.MANAGER);
+            when(permissionService.canEdit(Relationship.MANAGER, FieldType.NON_SENSITIVE)).thenReturn(true);
+            when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
+            when(profileMapper.toDTO(profile, Relationship.MANAGER)).thenReturn(profileDTO);
+
+            ProfileDTO result = profileService.updateProfile(viewerId, profileOwnerId, updateDTO);
+
+            assertThat(result).isNotNull();
+            verify(profileRepository).save(any(EmployeeProfile.class));
+            assertThat(profile.getJobTitle()).isEqualTo("Senior Software Engineer");
+        }
+
+        @Test
+        @DisplayName("Should throw ForbiddenException when MANAGER tries to edit sensitive fields")
+        void shouldThrowExceptionWhenManagerTriesToEditSensitiveFields() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .personalEmail("manager.trying@test.com")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(viewerId, profileOwnerId))
+                    .thenReturn(Relationship.MANAGER);
+            when(permissionService.canEdit(Relationship.MANAGER, FieldType.SENSITIVE)).thenReturn(false);
+
+            assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
+                    .isInstanceOf(ForbiddenException.class)
+                    .hasMessageContaining("sensitive fields");
+        }
+
+        @Test
+        @DisplayName("Should throw ForbiddenException when COWORKER tries to edit non-sensitive fields")
+        void shouldThrowExceptionWhenCoworkerTriesToEditNonSensitiveFields() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .preferredName("Hacker Name")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(viewerId, profileOwnerId))
+                    .thenReturn(Relationship.COWORKER);
+            when(permissionService.canEdit(Relationship.COWORKER, FieldType.NON_SENSITIVE)).thenReturn(false);
+
+            assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
+                    .isInstanceOf(ForbiddenException.class)
+                    .hasMessageContaining("non-sensitive fields");
+        }
+
+        @Test
+        @DisplayName("Should throw ForbiddenException when COWORKER tries to edit sensitive fields")
+        void shouldThrowExceptionWhenCoworkerTriesToEditSensitiveFields() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .personalEmail("coworker.trying@test.com")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(viewerId, profileOwnerId))
+                    .thenReturn(Relationship.COWORKER);
+            when(permissionService.canEdit(Relationship.COWORKER, FieldType.SENSITIVE)).thenReturn(false);
+
+            assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
+                    .isInstanceOf(ForbiddenException.class)
+                    .hasMessageContaining("sensitive fields");
+        }
+
+        @Test
+        @DisplayName("Should update multiple fields at once")
+        void shouldUpdateMultipleFieldsAtOnce() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .preferredName("Updated Name")
+                    .jobTitle("Senior Engineer")
+                    .bio("Updated bio")
+                    .workLocationType(WorkLocationType.REMOTE)
+                    .personalEmail("new@test.com")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
+            when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
+                    .thenReturn(Relationship.SELF);
+            when(permissionService.canEdit(Relationship.SELF, FieldType.NON_SENSITIVE)).thenReturn(true);
+            when(permissionService.canEdit(Relationship.SELF, FieldType.SENSITIVE)).thenReturn(true);
+            when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
+            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+
+            ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
+
+            assertThat(result).isNotNull();
+            assertThat(profile.getPreferredName()).isEqualTo("Updated Name");
+            assertThat(profile.getJobTitle()).isEqualTo("Senior Engineer");
+            assertThat(profile.getBio()).isEqualTo("Updated bio");
+            assertThat(profile.getWorkLocationType()).isEqualTo(WorkLocationType.REMOTE);
+            assertThat(profile.getPersonalEmail()).isEqualTo("new@test.com");
+        }
+
+        @Test
+        @DisplayName("Should throw ResourceNotFoundException when updating non-existent profile")
+        void shouldThrowExceptionWhenUpdatingNonExistentProfile() {
+            ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
+                    .preferredName("Test")
+                    .build();
+
+            when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
+                    .isInstanceOf(ResourceNotFoundException.class)
+                    .hasMessageContaining("Profile not found");
+        }
     }
-
-    @Test
-    @DisplayName("Should get profile with COWORKER relationship")
-    void shouldGetProfileWithCoworkerRelationship() {
-        // Given
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(viewerId, profileOwnerId))
-                .thenReturn(Relationship.COWORKER);
-        when(profileMapper.toDTO(profile, Relationship.COWORKER)).thenReturn(profileDTO);
-
-        // When
-        ProfileDTO result = profileService.getProfile(viewerId, profileOwnerId);
-
-        // Then
-        assertThat(result).isNotNull();
-        verify(profileMapper).toDTO(profile, Relationship.COWORKER);
-    }
-
-    @Test
-    @DisplayName("Should throw ResourceNotFoundException when profile not found")
-    void shouldThrowExceptionWhenProfileNotFound() {
-        // Given
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.empty());
-
-        // When/Then
-        assertThatThrownBy(() -> profileService.getProfile(viewerId, profileOwnerId))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Profile not found");
-    }
-
-    @Test
-    @DisplayName("Should update non-sensitive fields as SELF")
-    void shouldUpdateNonSensitiveFieldsAsSelf() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .preferredName("Updated Name")
-                .bio("Updated bio")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
-                .thenReturn(Relationship.SELF);
-        when(permissionService.canEdit(Relationship.SELF, FieldType.NON_SENSITIVE)).thenReturn(true);
-        when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-        when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
-
-        // When
-        ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
-
-        // Then
-        assertThat(result).isNotNull();
-        verify(profileRepository).save(any(EmployeeProfile.class));
-        assertThat(profile.getPreferredName()).isEqualTo("Updated Name");
-        assertThat(profile.getBio()).isEqualTo("Updated bio");
-    }
-
-    @Test
-    @DisplayName("Should update sensitive fields as SELF")
-    void shouldUpdateSensitiveFieldsAsSelf() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .personalEmail("new.email@test.com")
-                .personalPhone("+1-555-9999")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
-                .thenReturn(Relationship.SELF);
-        when(permissionService.canEdit(Relationship.SELF, FieldType.SENSITIVE)).thenReturn(true);
-        when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-        when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
-
-        // When
-        ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
-
-        // Then
-        assertThat(result).isNotNull();
-        verify(profileRepository).save(any(EmployeeProfile.class));
-        assertThat(profile.getPersonalEmail()).isEqualTo("new.email@test.com");
-        assertThat(profile.getPersonalPhone()).isEqualTo("+1-555-9999");
-    }
-
-    @Test
-    @DisplayName("Should update non-sensitive fields as MANAGER for direct report")
-    void shouldUpdateNonSensitiveFieldsAsManager() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .jobTitle("Senior Software Engineer")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(viewerId, profileOwnerId))
-                .thenReturn(Relationship.MANAGER);
-        when(permissionService.canEdit(Relationship.MANAGER, FieldType.NON_SENSITIVE)).thenReturn(true);
-        when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-        when(profileMapper.toDTO(profile, Relationship.MANAGER)).thenReturn(profileDTO);
-
-        // When
-        ProfileDTO result = profileService.updateProfile(viewerId, profileOwnerId, updateDTO);
-
-        // Then
-        assertThat(result).isNotNull();
-        verify(profileRepository).save(any(EmployeeProfile.class));
-        assertThat(profile.getJobTitle()).isEqualTo("Senior Software Engineer");
-    }
-
-    @Test
-    @DisplayName("Should throw ForbiddenException when MANAGER tries to edit sensitive fields")
-    void shouldThrowExceptionWhenManagerTriesToEditSensitiveFields() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .personalEmail("manager.trying@test.com")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(viewerId, profileOwnerId))
-                .thenReturn(Relationship.MANAGER);
-        when(permissionService.canEdit(Relationship.MANAGER, FieldType.SENSITIVE)).thenReturn(false);
-
-        // When/Then
-        assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessageContaining("sensitive fields");
-    }
-
-    @Test
-    @DisplayName("Should throw ForbiddenException when COWORKER tries to edit non-sensitive fields")
-    void shouldThrowExceptionWhenCoworkerTriesToEditNonSensitiveFields() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .preferredName("Hacker Name")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(viewerId, profileOwnerId))
-                .thenReturn(Relationship.COWORKER);
-        when(permissionService.canEdit(Relationship.COWORKER, FieldType.NON_SENSITIVE)).thenReturn(false);
-
-        // When/Then
-        assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessageContaining("non-sensitive fields");
-    }
-
-    @Test
-    @DisplayName("Should throw ForbiddenException when COWORKER tries to edit sensitive fields")
-    void shouldThrowExceptionWhenCoworkerTriesToEditSensitiveFields() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .personalEmail("coworker.trying@test.com")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(viewerId, profileOwnerId))
-                .thenReturn(Relationship.COWORKER);
-        when(permissionService.canEdit(Relationship.COWORKER, FieldType.SENSITIVE)).thenReturn(false);
-
-        // When/Then
-        assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
-                .isInstanceOf(ForbiddenException.class)
-                .hasMessageContaining("sensitive fields");
-    }
-
-    @Test
-    @DisplayName("Should update multiple fields at once")
-    void shouldUpdateMultipleFieldsAtOnce() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .preferredName("Updated Name")
-                .jobTitle("Senior Engineer")
-                .bio("Updated bio")
-                .workLocationType(WorkLocationType.REMOTE)
-                .personalEmail("new@test.com")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
-        when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
-                .thenReturn(Relationship.SELF);
-        when(permissionService.canEdit(Relationship.SELF, FieldType.NON_SENSITIVE)).thenReturn(true);
-        when(permissionService.canEdit(Relationship.SELF, FieldType.SENSITIVE)).thenReturn(true);
-        when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-        when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
-
-        // When
-        ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
-
-        // Then
-        assertThat(result).isNotNull();
-        assertThat(profile.getPreferredName()).isEqualTo("Updated Name");
-        assertThat(profile.getJobTitle()).isEqualTo("Senior Engineer");
-        assertThat(profile.getBio()).isEqualTo("Updated bio");
-        assertThat(profile.getWorkLocationType()).isEqualTo(WorkLocationType.REMOTE);
-        assertThat(profile.getPersonalEmail()).isEqualTo("new@test.com");
-    }
-
-    @Test
-    @DisplayName("Should throw ResourceNotFoundException when updating non-existent profile")
-    void shouldThrowExceptionWhenUpdatingNonExistentProfile() {
-        // Given
-        ProfileUpdateDTO updateDTO = ProfileUpdateDTO.builder()
-                .preferredName("Test")
-                .build();
-
-        when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.empty());
-
-        // When/Then
-        assertThatThrownBy(() -> profileService.updateProfile(viewerId, profileOwnerId, updateDTO))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Profile not found");
-    }
+}
 }

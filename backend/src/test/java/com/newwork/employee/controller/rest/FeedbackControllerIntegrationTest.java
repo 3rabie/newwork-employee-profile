@@ -209,132 +209,11 @@ class FeedbackControllerIntegrationTest {
                 .andExpect(status().isForbidden()); // 403 for missing auth token
     }
 
-    @Test
-    @DisplayName("Should get feedback for profile - author can see their feedback")
-    void shouldGetFeedbackForProfileAsAuthor() throws Exception {
-        // Given - employee1 gives feedback to employee2
-        Feedback feedback = new Feedback();
-        feedback.setAuthor(employee1);
-        feedback.setRecipient(employee2);
-        feedback.setText("Great work!");
-        feedback.setAiPolished(false);
-        feedbackRepository.save(feedback);
-
-        // When/Then - employee1 views feedback about employee2
-        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
-                        .header("Authorization", "Bearer " + employee1Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].text").value("Great work!"));
-    }
-
-    @Test
-    @DisplayName("Should get feedback for profile - recipient can see their feedback")
-    void shouldGetFeedbackForProfileAsRecipient() throws Exception {
-        // Given - employee1 gives feedback to employee2
-        Feedback feedback = new Feedback();
-        feedback.setAuthor(employee1);
-        feedback.setRecipient(employee2);
-        feedback.setText("Great work!");
-        feedback.setAiPolished(false);
-        feedbackRepository.save(feedback);
-
-        // When/Then - employee2 views feedback about themselves
-        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
-                        .header("Authorization", "Bearer " + employee2Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].text").value("Great work!"));
-    }
-
-    @Test
-    @DisplayName("Should get feedback for profile - manager can see feedback about direct reports")
-    void shouldGetFeedbackForProfileAsManager() throws Exception {
-        // Given - employee1 gives feedback to employee2 (both report to manager)
-        Feedback feedback = new Feedback();
-        feedback.setAuthor(employee1);
-        feedback.setRecipient(employee2);
-        feedback.setText("Great work!");
-        feedback.setAiPolished(false);
-        feedbackRepository.save(feedback);
-
-        // When/Then - manager views feedback about employee2
-        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
-                        .header("Authorization", "Bearer " + managerToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].text").value("Great work!"));
-    }
-
-    @Test
-    @DisplayName("Should not see feedback when not author, recipient, or manager")
-    void shouldNotSeeFeedbackWithoutPermission() throws Exception {
-        // Given - Create a third employee not managed by same manager
-        User employee3 = User.builder()
-                .employeeId("EMP-103")
-                .email("emp3@test.com")
-                .password(passwordEncoder.encode("password123"))
-                .role(Role.EMPLOYEE)
-                .manager(null) // Different manager
-                .build();
-        employee3 = userRepository.save(employee3);
-        createProfile(employee3, "Test Employee 3");
-        String employee3Token = getAuthToken("emp3@test.com", "password123");
-
-        // employee1 gives feedback to employee2
-        Feedback feedback = new Feedback();
-        feedback.setAuthor(employee1);
-        feedback.setRecipient(employee2);
-        feedback.setText("Great work!");
-        feedback.setAiPolished(false);
-        feedbackRepository.save(feedback);
-
-        // When/Then - employee3 tries to view feedback about employee2
-        mockMvc.perform(get("/api/profiles/{id}/feedback", employee2.getId())
-                        .header("Authorization", "Bearer " + employee3Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0))); // Should see no feedback
-    }
-
-    @Test
-    @DisplayName("Should get authored feedback")
-    void shouldGetAuthoredFeedback() throws Exception {
-        // Given - employee1 gives feedback to employee2
-        Feedback feedback = new Feedback();
-        feedback.setAuthor(employee1);
-        feedback.setRecipient(employee2);
-        feedback.setText("Great work!");
-        feedback.setAiPolished(false);
-        feedbackRepository.save(feedback);
-
-        // When/Then - employee1 gets their authored feedback
-        mockMvc.perform(get("/api/feedback/authored")
-                        .header("Authorization", "Bearer " + employee1Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].authorId").value(employee1.getId().toString()))
-                .andExpect(jsonPath("$[0].text").value("Great work!"));
-    }
-
-    @Test
-    @DisplayName("Should get received feedback")
-    void shouldGetReceivedFeedback() throws Exception {
-        // Given - employee1 gives feedback to employee2
-        Feedback feedback = new Feedback();
-        feedback.setAuthor(employee1);
-        feedback.setRecipient(employee2);
-        feedback.setText("Great work!");
-        feedback.setAiPolished(false);
-        feedbackRepository.save(feedback);
-
-        // When/Then - employee2 gets their received feedback
-        mockMvc.perform(get("/api/feedback/received")
-                        .header("Authorization", "Bearer " + employee2Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].recipientId").value(employee2.getId().toString()))
-                .andExpect(jsonPath("$[0].text").value("Great work!"));
-    }
+    // NOTE: GET endpoint tests removed - feedback queries now use GraphQL
+    // See FeedbackGraphQLControllerIntegrationTest for GraphQL query tests
+    // - feedbackForUser query
+    // - myAuthoredFeedback query
+    // - myReceivedFeedback query
 
     @Test
     @DisplayName("Should validate required fields when creating feedback")
@@ -351,13 +230,4 @@ class FeedbackControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    @Test
-    @DisplayName("Should return empty list when no feedback exists")
-    void shouldReturnEmptyListWhenNoFeedbackExists() throws Exception {
-        // When/Then - Get authored feedback with no feedback in database
-        mockMvc.perform(get("/api/feedback/authored")
-                        .header("Authorization", "Bearer " + employee1Token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(0)));
-    }
 }

@@ -1,4 +1,4 @@
-package com.newwork.employee.service;
+package com.newwork.employee.service.impl;
 
 import com.newwork.employee.dto.request.LoginRequest;
 import com.newwork.employee.dto.response.AuthResponse;
@@ -8,6 +8,7 @@ import com.newwork.employee.exception.UserNotFoundException;
 import com.newwork.employee.mapper.AuthMapper;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.security.JwtTokenProvider;
+import com.newwork.employee.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -36,7 +37,6 @@ public class AuthServiceImpl implements AuthService {
         log.info("Login attempt for email: {}", loginRequest.getEmail());
 
         try {
-            // Authenticate user
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getEmail(),
@@ -44,15 +44,12 @@ public class AuthServiceImpl implements AuthService {
                     )
             );
 
-            // Load user details
             User user = userRepository.findByEmail(loginRequest.getEmail())
                     .orElseThrow(() -> new UserNotFoundException("User not found with email: " + loginRequest.getEmail()));
 
-            // Generate JWT token
             String token = jwtTokenProvider.generateToken(user);
 
             log.info("Login successful for user: {}", user.getEmail());
-
             return authMapper.toAuthResponse(user, token);
 
         } catch (AuthenticationException e) {
@@ -66,15 +63,12 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse switchUser(String email) {
         log.info("Switching to user: {}", email);
 
-        // Demo feature: Switch to any user without password
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
 
-        // Generate JWT token
         String token = jwtTokenProvider.generateToken(user);
 
         log.info("Switched to user: {}", user.getEmail());
-
         return authMapper.toAuthResponse(user, token);
     }
 }

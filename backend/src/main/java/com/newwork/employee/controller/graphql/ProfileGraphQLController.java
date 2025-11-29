@@ -1,4 +1,4 @@
-package com.newwork.employee.graphql;
+package com.newwork.employee.controller.graphql;
 
 import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.service.ProfileService;

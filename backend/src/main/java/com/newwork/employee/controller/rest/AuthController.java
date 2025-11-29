@@ -1,4 +1,4 @@
-package com.newwork.employee.controller;
+package com.newwork.employee.controller.rest;
 
 import com.newwork.employee.dto.request.LoginRequest;
 import com.newwork.employee.dto.request.SwitchUserRequest;
