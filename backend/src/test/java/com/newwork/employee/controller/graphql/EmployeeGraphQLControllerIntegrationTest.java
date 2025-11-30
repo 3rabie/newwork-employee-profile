@@ -3,11 +3,15 @@ package com.newwork.employee.controller.graphql;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newwork.employee.dto.request.LoginRequest;
 import com.newwork.employee.dto.response.AuthResponse;
+import com.newwork.employee.entity.AbsenceRequest;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.User;
+import com.newwork.employee.entity.enums.AbsenceStatus;
+import com.newwork.employee.entity.enums.AbsenceType;
 import com.newwork.employee.entity.enums.EmploymentStatus;
 import com.newwork.employee.entity.enums.Role;
 import com.newwork.employee.entity.enums.WorkLocationType;
+import com.newwork.employee.repository.AbsenceRequestRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,9 +69,14 @@ class EmployeeGraphQLControllerIntegrationTest {
     private User engineer;
     private User productManager;
     private String managerToken;
+    private String engineerToken;
+
+    @Autowired
+    private AbsenceRequestRepository absenceRequestRepository;
 
     @BeforeEach
     void setUp() throws Exception {
+        absenceRequestRepository.deleteAll();
         profileRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -80,6 +89,10 @@ class EmployeeGraphQLControllerIntegrationTest {
         profileRepository.save(createProfile(productManager, "Product", "Product Manager"));
 
         managerToken = authenticate("mgr@test.com");
+        engineerToken = authenticate("engineer@test.com");
+
+        absenceRequestRepository.save(createAbsence(engineer, manager, AbsenceStatus.PENDING));
+        absenceRequestRepository.save(createAbsence(manager, null, AbsenceStatus.APPROVED));
     }
 
     @Test
@@ -123,6 +136,62 @@ class EmployeeGraphQLControllerIntegrationTest {
                 .andExpect(jsonPath("$.data.coworkerDirectory", hasSize(1)))
                 .andExpect(jsonPath("$.data.coworkerDirectory[0].userId")
                         .value(productManager.getId().toString()));
+    }
+
+    @Test
+    @DisplayName("User can fetch own absence requests via GraphQL")
+    void shouldReturnMyAbsenceRequests() throws Exception {
+        String query = """
+            query {
+                myAbsenceRequests {
+                    id
+                    status
+                    type
+                }
+            }
+            """;
+
+        performGraphQL(engineerToken, query)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.myAbsenceRequests", hasSize(1)))
+                .andExpect(jsonPath("$.data.myAbsenceRequests[0].status").value(AbsenceStatus.PENDING.name()))
+                .andExpect(jsonPath("$.data.myAbsenceRequests[0].type").value(AbsenceType.VACATION.name()));
+    }
+
+    @Test
+    @DisplayName("Manager can fetch pending absence requests via GraphQL")
+    void managerShouldSeePendingAbsences() throws Exception {
+        String query = """
+            query {
+                pendingAbsenceRequests {
+                    id
+                    status
+                    userId
+                }
+            }
+            """;
+
+        performGraphQL(managerToken, query)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pendingAbsenceRequests", hasSize(1)))
+                .andExpect(jsonPath("$.data.pendingAbsenceRequests[0].status").value(AbsenceStatus.PENDING.name()))
+                .andExpect(jsonPath("$.data.pendingAbsenceRequests[0].userId").value(engineer.getId().toString()));
+    }
+
+    @Test
+    @DisplayName("Non-manager cannot view pending absence requests via GraphQL")
+    void nonManagerCannotSeePendingAbsences() throws Exception {
+        String query = """
+            query {
+                pendingAbsenceRequests {
+                    id
+                }
+            }
+            """;
+
+        performGraphQL(engineerToken, query)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.errors[0].extensions.classification").value("FORBIDDEN"));
     }
 
     private ResultActions performGraphQL(String token, String query) throws Exception {
@@ -174,6 +243,17 @@ class EmployeeGraphQLControllerIntegrationTest {
                 .hireDate(LocalDate.of(2020, 1, 1))
                 .fte(new BigDecimal("1.00"))
                 .workLocationType(WorkLocationType.HYBRID)
+                .build());
+    }
+
+    private AbsenceRequest createAbsence(User user, User manager, AbsenceStatus status) {
+        return absenceRequestRepository.save(AbsenceRequest.builder()
+                .user(user)
+                .manager(manager)
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusDays(1))
+                .type(AbsenceType.VACATION)
+                .status(status)
                 .build());
     }
 }

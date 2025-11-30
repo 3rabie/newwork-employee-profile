@@ -13,6 +13,12 @@ type Query {
     profile(userId: UUID!): Profile
 
     """
+    List coworkers and direct reports visible to the authenticated user.
+    Optional filters allow searching by name/email/employee ID and limiting by department.
+    """
+    coworkerDirectory(search: String, department: String): [Coworker!]!
+
+    """
     Get all feedback visible to the authenticated user for a specific user.
     Visibility rules: authors see their feedback, recipients see feedback about them,
     managers see feedback about their direct reports.
@@ -30,10 +36,14 @@ type Query {
     myReceivedFeedback: [Feedback!]!
 
     """
-    List coworkers and direct reports visible to the authenticated user.
-    Optional filters allow searching by name/email/employee ID and limiting by department.
+    List absence requests for the authenticated user.
     """
-    coworkerDirectory(search: String, department: String): [Coworker!]!
+    myAbsenceRequests: [AbsenceRequest!]!
+
+    """
+    List pending absence requests for the current manager.
+    """
+    pendingAbsenceRequests: [AbsenceRequest!]!
 }
 
 # Feedback type
@@ -208,4 +218,16 @@ type Coworker {
     profilePhotoUrl: String
     relationship: String!
     directReport: Boolean!
+}
+
+"""Absence request record"""
+type AbsenceRequest {
+    id: UUID!
+    userId: UUID!
+    managerId: UUID
+    startDate: String!
+    endDate: String!
+    type: String!
+    status: String!
+    note: String
 }
