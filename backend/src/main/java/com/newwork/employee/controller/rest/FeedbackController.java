@@ -2,7 +2,10 @@ package com.newwork.employee.controller.rest;
 
 import com.newwork.employee.dto.FeedbackDTO;
 import com.newwork.employee.dto.request.CreateFeedbackRequest;
+import com.newwork.employee.dto.request.PolishFeedbackRequest;
+import com.newwork.employee.dto.response.PolishFeedbackResponse;
 import com.newwork.employee.security.AuthenticatedUser;
+import com.newwork.employee.service.FeedbackPolishService;
 import com.newwork.employee.service.FeedbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -33,6 +36,7 @@ import java.util.UUID;
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
+    private final FeedbackPolishService feedbackPolishService;
 
     /**
      * Create new feedback.
@@ -65,5 +69,24 @@ public class FeedbackController {
             @Valid @RequestBody CreateFeedbackRequest request) {
         FeedbackDTO feedback = feedbackService.createFeedback(authenticatedUser.getUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(feedback);
+    }
+
+    @PostMapping("/polish")
+    @Operation(
+            summary = "Polish feedback text using HuggingFace",
+            description = "Uses HuggingFace inference API to polish draft feedback. Requires at least 10 characters."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully polished feedback",
+                    content = @Content(schema = @Schema(implementation = PolishFeedbackResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid text length"),
+            @ApiResponse(responseCode = "401", description = "Missing authentication"),
+            @ApiResponse(responseCode = "502", description = "AI service unavailable")
+    })
+    public ResponseEntity<PolishFeedbackResponse> polishFeedback(
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser,
+            @Valid @RequestBody PolishFeedbackRequest request) {
+        PolishFeedbackResponse response = feedbackPolishService.polish(request.getText());
+        return ResponseEntity.ok(response);
     }
 }

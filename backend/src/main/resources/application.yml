@@ -56,3 +56,10 @@ app:
       allow-credentials: ${APP_SECURITY_ALLOW_CREDENTIALS:true}
     demo:
       switch-user-enabled: ${APP_SECURITY_SWITCH_USER_ENABLED:true}
+  ai:
+    huggingface:
+      enabled: ${APP_AI_HF_ENABLED:true}
+      api-url: ${APP_AI_HF_URL:https://router.huggingface.co/v1/chat/completions}
+      model: ${APP_AI_HF_MODEL:meta-llama/Llama-3.1-8B-Instruct}
+      api-key: ${APP_AI_HF_API_KEY:}
+      timeout: ${APP_AI_HF_TIMEOUT:PT10S}

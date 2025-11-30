@@ -31,6 +31,11 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(AiServiceException.class)
+    public ResponseEntity<ApiError> handleAiService(AiServiceException ex) {
+        return buildResponse(HttpStatus.BAD_GATEWAY, ex.getMessage());
+    }
+
     private ResponseEntity<ApiError> buildResponse(HttpStatus status, String message) {
         return ResponseEntity.status(status)
                 .body(ApiError.of(status.value(), message));

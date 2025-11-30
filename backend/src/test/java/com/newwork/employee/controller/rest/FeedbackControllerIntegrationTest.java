@@ -3,16 +3,20 @@ package com.newwork.employee.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newwork.employee.dto.request.CreateFeedbackRequest;
 import com.newwork.employee.dto.request.LoginRequest;
+import com.newwork.employee.dto.request.PolishFeedbackRequest;
 import com.newwork.employee.dto.response.AuthResponse;
+import com.newwork.employee.dto.response.PolishFeedbackResponse;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.Feedback;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.EmploymentStatus;
 import com.newwork.employee.entity.enums.Role;
 import com.newwork.employee.entity.enums.WorkLocationType;
+import com.newwork.employee.exception.AiServiceException;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.FeedbackRepository;
 import com.newwork.employee.repository.UserRepository;
+import com.newwork.employee.service.FeedbackPolishService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +28,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,8 +37,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -62,6 +69,9 @@ class FeedbackControllerIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @MockBean
+    private FeedbackPolishService feedbackPolishService;
 
     private User manager;
     private User employee1;
@@ -230,4 +240,44 @@ class FeedbackControllerIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    @DisplayName("Should polish feedback text using AI service")
+    void shouldPolishFeedback() throws Exception {
+        when(feedbackPolishService.polish("Great teamwork from the whole team!"))
+                .thenReturn(new PolishFeedbackResponse("Great teamwork from the whole team!", "Great teamwork from the whole team! Keep it up."));
+
+        PolishFeedbackRequest request = new PolishFeedbackRequest();
+        request.setText("Great teamwork from the whole team!");
+
+        mockMvc.perform(post("/api/feedback/polish")
+                        .header("Authorization", "Bearer " + employee1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.originalText").value("Great teamwork from the whole team!"))
+                .andExpect(jsonPath("$.polishedText").value("Great teamwork from the whole team! Keep it up."));
+    }
+
+    @Test
+    @DisplayName("Should return bad request when polishing text shorter than 10 characters")
+    void shouldValidatePolishRequest() throws Exception {
+        mockMvc.perform(post("/api/feedback/polish")
+                        .header("Authorization", "Bearer " + employee1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"short\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("Should return 502 when AI service fails")
+    void shouldHandleAiServiceFailure() throws Exception {
+        when(feedbackPolishService.polish(anyString()))
+                .thenThrow(new AiServiceException("AI unavailable"));
+
+        mockMvc.perform(post("/api/feedback/polish")
+                        .header("Authorization", "Bearer " + employee1Token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"text\":\"Great teamwork from the whole team!\"}"))
+                .andExpect(status().isBadGateway());
+    }
 }
