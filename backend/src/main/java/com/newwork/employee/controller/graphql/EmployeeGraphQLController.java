@@ -1,7 +1,9 @@
 package com.newwork.employee.controller.graphql;
 
+import com.newwork.employee.dto.CoworkerDTO;
 import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.security.AuthenticatedUser;
+import com.newwork.employee.service.DirectoryService;
 import com.newwork.employee.service.ProfileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -9,30 +11,31 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
- * GraphQL controller for employee profile queries.
- * Provides profile data with permission-based field filtering.
+ * GraphQL controller aggregating employee-related queries (profile + directory).
  */
 @Controller
 @RequiredArgsConstructor
-public class ProfileGraphQLController {
+public class EmployeeGraphQLController {
 
     private final ProfileService profileService;
+    private final DirectoryService directoryService;
 
-    /**
-     * Get employee profile by user ID.
-     * Fields are filtered based on the authenticated user's permissions.
-     *
-     * @param userId the ID of the user whose profile to retrieve
-     * @param userDetails the authenticated user
-     * @return ProfileDTO with fields filtered by permissions
-     */
     @QueryMapping
     public ProfileDTO profile(
             @Argument UUID userId,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
         return profileService.getProfile(authenticatedUser.getUserId(), userId);
+    }
+
+    @QueryMapping
+    public List<CoworkerDTO> coworkerDirectory(
+            @Argument String search,
+            @Argument String department,
+            @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
+        return directoryService.getDirectory(authenticatedUser.getUserId(), search, department);
     }
 }

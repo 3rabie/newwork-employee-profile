@@ -53,12 +53,19 @@ export type FieldType = (typeof FieldType)[keyof typeof FieldType];
  * Complete profile DTO matching backend ProfileDTO.
  * Fields may be null based on viewer's permissions.
  */
+export interface ProfileMetadata {
+  relationship: string;
+  visibleFields: string[];
+  editableFields: string[];
+}
+
 export interface ProfileDTO {
-  // Metadata
   id: string;
   userId: string;
-  createdAt: string;
-  updatedAt: string;
+  email?: string;
+  employeeId?: string;
+  createdAt?: string;
+  updatedAt?: string;
 
   // SYSTEM_MANAGED fields - visible to all
   legalFirstName?: string;
@@ -94,6 +101,8 @@ export interface ProfileDTO {
   absenceBalanceDays?: number;
   salary?: number;
   performanceRating?: string;
+
+  metadata?: ProfileMetadata;
 }
 
 /**

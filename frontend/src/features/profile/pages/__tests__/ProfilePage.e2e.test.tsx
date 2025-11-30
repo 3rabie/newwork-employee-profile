@@ -58,6 +58,11 @@ const mockProfile: ProfileDTO = {
   absenceBalanceDays: 10,
   salary: 100000,
   performanceRating: 'EXCEEDS',
+  metadata: {
+    relationship: 'SELF',
+    visibleFields: ['SYSTEM_MANAGED', 'NON_SENSITIVE', 'SENSITIVE'],
+    editableFields: ['NON_SENSITIVE', 'SENSITIVE'],
+  },
 };
 
 const sampleFeedback: FeedbackListItem = {
@@ -178,7 +183,7 @@ describe('ProfilePage E2E flow', () => {
 
     renderApp();
 
-    await screen.findByText(/feedback/i);
+    await screen.findByRole('heading', { name: /feedback/i });
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /give feedback/i }));

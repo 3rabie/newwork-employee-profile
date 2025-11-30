@@ -129,3 +129,24 @@ export const GET_MY_RECEIVED_FEEDBACK_QUERY = gql`
     }
   }
 `;
+
+/**
+ * GraphQL query to fetch coworker directory entries
+ */
+export const GET_COWORKER_DIRECTORY_QUERY = gql`
+  query GetCoworkerDirectory($search: String, $department: String) {
+    coworkerDirectory(search: $search, department: $department) {
+      userId
+      employeeId
+      preferredName
+      legalFirstName
+      legalLastName
+      jobTitle
+      department
+      workLocationType
+      profilePhotoUrl
+      relationship
+      directReport
+    }
+  }
+`;

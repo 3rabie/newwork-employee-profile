@@ -4,6 +4,7 @@ import { ProtectedRoute } from './features/auth/components/ProtectedRoute';
 import { LoginPage } from './features/auth/pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import ProfilePage from './features/profile/pages/ProfilePage';
+import { DirectoryPage } from './features/directory/pages/DirectoryPage';
 
 function App() {
   return (
@@ -24,6 +25,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/people"
+            element={
+              <ProtectedRoute>
+                <DirectoryPage />
               </ProtectedRoute>
             }
           />

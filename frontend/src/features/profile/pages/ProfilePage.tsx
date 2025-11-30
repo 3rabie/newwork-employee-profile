@@ -17,6 +17,7 @@ import { FeedbackList } from '../../feedback/components/FeedbackList';
 import { FeedbackModal } from '../../feedback/components/FeedbackModal';
 import { getFeedbackForUser } from '../../feedback/api/feedbackApi';
 import type { FeedbackListItem } from '../../feedback/types';
+import { GraphQLRequestError } from '../../../lib/graphql-client';
 import './ProfilePage.css';
 
 type ApiErrorResponse = {
@@ -50,10 +51,14 @@ const ProfilePage: React.FC = () => {
   const [feedbackItems, setFeedbackItems] = useState<FeedbackListItem[]>([]);
   const [feedbackLoading, setFeedbackLoading] = useState(true);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackForbidden, setFeedbackForbidden] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
   const isSelf = user?.userId === userId;
   const canGiveFeedback = Boolean(user?.userId && userId && user?.userId !== userId);
+  const canEditProfile = profile?.metadata
+    ? profile.metadata.editableFields.length > 0
+    : isSelf;
 
   useEffect(() => {
     if (userId) {
@@ -79,19 +84,43 @@ const ProfilePage: React.FC = () => {
     try {
       setFeedbackLoading(true);
       setFeedbackError(null);
+      setFeedbackForbidden(false);
       const data = await getFeedbackForUser(id);
       setFeedbackItems(data);
+      setFeedbackForbidden(false);
     } catch (err: unknown) {
-      setFeedbackError(getErrorMessage(err, 'Failed to load feedback'));
+      if (err instanceof GraphQLRequestError) {
+        const forbiddenError = err.errors?.some(
+          (error) => error.extensions?.errorType === 'FORBIDDEN'
+        );
+        if (forbiddenError) {
+            setFeedbackForbidden(true);
+            setFeedbackError(null);
+          setFeedbackItems([]);
+          setFeedbackLoading(false);
+          return;
+        }
+      }
+      const message = getErrorMessage(err, 'Failed to load feedback');
+        setFeedbackError(message);
     } finally {
       setFeedbackLoading(false);
     }
   };
 
   const handleEdit = () => {
+    if (!canEditProfile) {
+      return;
+    }
     setIsEditMode(true);
     setEditedProfile({});
     setFieldErrors({});
+  };
+
+  const handleReloadFeedback = () => {
+    if (userId) {
+      loadFeedback(userId);
+    }
   };
 
   const handleCancel = () => {
@@ -289,10 +318,13 @@ const ProfilePage: React.FC = () => {
         <div className="profile-header-actions">
           {!isEditMode ? (
             <>
-              <button className="btn-secondary" onClick={() => navigate('/')}>
+              <button
+                className="btn-secondary"
+                onClick={() => navigate(isSelf ? '/' : '/people')}
+              >
                 Back
               </button>
-              {isSelf && (
+              {canEditProfile && (
                 <button className="btn-primary" onClick={handleEdit}>
                   Edit Profile
                 </button>
@@ -359,12 +391,20 @@ const ProfilePage: React.FC = () => {
               </button>
             )}
           </div>
-          {feedbackError && <div className="profile-error-message">{feedbackError}</div>}
-          <FeedbackList
-            items={feedbackItems}
-            isLoading={feedbackLoading}
-            emptyState="No feedback for this teammate yet."
-          />
+          {feedbackForbidden ? null : feedbackError ? (
+            <div className="profile-error-message">
+              <p>{feedbackError}</p>
+              <button className="btn-secondary" onClick={handleReloadFeedback}>
+                Retry loading feedback
+              </button>
+            </div>
+          ) : (
+            <FeedbackList
+              items={feedbackItems}
+              isLoading={feedbackLoading}
+              emptyState="No feedback recieved yet."
+            />
+          )}
         </section>
       </div>
       {canGiveFeedback && (

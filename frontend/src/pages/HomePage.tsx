@@ -61,12 +61,20 @@ export function HomePage() {
             )}
           </div>
           <div className="actions-section">
-            <button
-              className="btn-primary"
-              onClick={() => navigate(`/profile/${user?.userId}`)}
-            >
-              View My Profile
-            </button>
+            <div className="actions-buttons">
+              <button
+                className="btn-primary"
+                onClick={() => navigate(`/profile/${user?.userId}`)}
+              >
+                View My Profile
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => navigate('/people')}
+              >
+                Browse People Directory
+              </button>
+            </div>
           </div>
         </div>
       </main>

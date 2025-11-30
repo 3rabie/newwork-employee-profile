@@ -77,6 +77,17 @@ public interface EmployeeProfileRepository extends JpaRepository<EmployeeProfile
     List<EmployeeProfile> findByManagerId(@Param("managerId") UUID managerId);
 
     /**
+     * Fetch active profiles along with user + manager data for directory listings.
+     */
+    @Query("""
+            SELECT p FROM EmployeeProfile p
+            JOIN FETCH p.user u
+            LEFT JOIN FETCH u.manager
+            WHERE p.employmentStatus = 'ACTIVE'
+            """)
+    List<EmployeeProfile> findAllActiveProfilesWithUserAndManager();
+
+    /**
      * Delete profile by user ID.
      *
      * @param userId the user ID

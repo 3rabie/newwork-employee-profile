@@ -8,6 +8,7 @@
 import React from 'react';
 import ProfileField from './ProfileField';
 import type { ProfileDTO, FieldMetadata } from '../types';
+import { FieldType } from '../types';
 
 interface ProfileSectionProps {
   title: string;
@@ -26,13 +27,25 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
   onChange,
   fieldErrors = {}
 }) => {
-  // Filter out fields that have no value and aren't editable
-  const visibleFields = fields.filter((field) => {
-    const value = profile[field.key];
-    return value !== undefined || (isEditMode && field.editable);
-  });
+  const visibleFieldTypes = new Set<string>(
+    profile.metadata?.visibleFields ?? Object.values(FieldType)
+  );
+  const editableFieldTypes = new Set<string>(
+    profile.metadata?.editableFields ?? []
+  );
 
-  if (visibleFields.length === 0) {
+  const adjustedFields = fields
+    .filter((field) => visibleFieldTypes.has(field.fieldType))
+    .map((field) => ({
+      ...field,
+      editable: field.editable && editableFieldTypes.has(field.fieldType),
+    }))
+    .filter((field) => {
+      const value = profile[field.key];
+      return value !== undefined || (isEditMode && field.editable);
+    });
+
+  if (adjustedFields.length === 0) {
     return null;
   }
 
@@ -40,7 +53,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     <div className="profile-section">
       <h2 className="profile-section-title">{title}</h2>
       <div className="profile-section-fields">
-        {visibleFields.map((field) => (
+        {adjustedFields.map((field) => (
           <ProfileField
             key={field.key}
             metadata={field}

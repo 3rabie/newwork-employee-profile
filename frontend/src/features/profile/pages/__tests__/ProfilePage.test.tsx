@@ -78,6 +78,11 @@ const baseProfile: ProfileDTO = {
   absenceBalanceDays: 10,
   salary: 100000,
   performanceRating: 'Exceeds',
+  metadata: {
+    relationship: 'SELF',
+    visibleFields: ['SYSTEM_MANAGED', 'NON_SENSITIVE', 'SENSITIVE'],
+    editableFields: ['NON_SENSITIVE', 'SENSITIVE'],
+  },
 };
 
 describe('ProfilePage', () => {

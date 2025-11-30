@@ -28,6 +28,12 @@ type Query {
     Get all feedback received by the authenticated user.
     """
     myReceivedFeedback: [Feedback!]!
+
+    """
+    List coworkers and direct reports visible to the authenticated user.
+    Optional filters allow searching by name/email/employee ID and limiting by department.
+    """
+    coworkerDirectory(search: String, department: String): [Coworker!]!
 }
 
 # Feedback type
@@ -187,4 +193,19 @@ type ProfileMetadata {
 
     """Fields editable by the viewer"""
     editableFields: [String!]!
+}
+
+"""Presentation model for the People directory."""
+type Coworker {
+    userId: UUID!
+    employeeId: String!
+    preferredName: String
+    legalFirstName: String!
+    legalLastName: String!
+    jobTitle: String
+    department: String
+    workLocationType: String
+    profilePhotoUrl: String
+    relationship: String!
+    directReport: Boolean!
 }

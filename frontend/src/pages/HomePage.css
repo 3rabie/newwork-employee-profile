@@ -151,6 +151,14 @@
   border-top: 1px solid #e2e8f0;
 }
 
+.actions-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: flex-start;
+}
+
 .btn-primary {
   padding: 0.75rem 1.5rem;
   background-color: #3b82f6;
@@ -169,6 +177,24 @@
   box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
 }
 
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background-color: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5f5;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
 .loading-container {
   min-height: 100vh;
   display: flex;
@@ -180,4 +206,10 @@
   color: #667eea;
   font-size: 1.125rem;
   font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .actions-buttons button {
+    width: 100%;
+  }
 }

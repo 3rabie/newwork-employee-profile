@@ -1,14 +1,24 @@
 import { httpClient } from './http-client';
 
-interface GraphQLError {
+export interface GraphQLError {
   message: string;
   path?: readonly (string | number)[];
   extensions?: Record<string, unknown>;
 }
 
-interface GraphQLResponse<T> {
+type GraphQLResponse<T> = {
   data?: T;
   errors?: GraphQLError[];
+};
+
+export class GraphQLRequestError extends Error {
+  public readonly errors: GraphQLError[];
+
+  constructor(message: string, errors: GraphQLError[]) {
+    super(message);
+    this.name = 'GraphQLRequestError';
+    this.errors = errors;
+  }
 }
 
 /**
@@ -27,11 +37,11 @@ export async function graphqlRequest<TData>(
 
   if (response.data.errors?.length) {
     const message = response.data.errors.map((error) => error.message).join('; ');
-    throw new Error(message || 'GraphQL request failed');
+    throw new GraphQLRequestError(message || 'GraphQL request failed', response.data.errors);
   }
 
   if (!response.data.data) {
-    throw new Error('GraphQL response did not contain data');
+    throw new GraphQLRequestError('GraphQL response did not contain data', []);
   }
 
   return response.data.data;
