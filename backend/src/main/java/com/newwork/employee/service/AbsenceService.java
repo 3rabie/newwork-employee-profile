@@ -4,6 +4,7 @@ import com.newwork.employee.dto.AbsenceRequestDTO;
 import com.newwork.employee.dto.request.CreateAbsenceRequest;
 import com.newwork.employee.dto.request.UpdateAbsenceStatusRequest;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface AbsenceService {
     List<AbsenceRequestDTO> getPendingForManager(UUID managerId);
 
     AbsenceRequestDTO updateStatus(UUID managerId, UUID requestId, UpdateAbsenceStatusRequest update);
+
+    int completeExpiredApproved(LocalDate asOfDate);
 }

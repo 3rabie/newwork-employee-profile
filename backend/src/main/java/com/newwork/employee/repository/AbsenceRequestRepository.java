@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,4 +39,15 @@ public interface AbsenceRequestRepository extends JpaRepository<AbsenceRequest, 
     List<AbsenceRequest> findByManagerIdAndStatus(
             @Param("managerId") UUID managerId,
             @Param("status") AbsenceStatus status);
+
+    @Query("""
+            select ar from AbsenceRequest ar
+            join fetch ar.user u
+            left join fetch ar.manager m
+            where ar.status = :status
+              and ar.endDate < :beforeDate
+            """)
+    List<AbsenceRequest> findByStatusAndEndDateBefore(
+            @Param("status") AbsenceStatus status,
+            @Param("beforeDate") LocalDate beforeDate);
 }

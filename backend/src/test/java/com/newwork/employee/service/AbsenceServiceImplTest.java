@@ -20,6 +20,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -167,5 +168,26 @@ class AbsenceServiceImplTest {
 
         assertThatThrownBy(() -> absenceService.submit(employee.getId(), dto))
                 .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    void completeExpiredApprovedShouldMarkCompleted() {
+        AbsenceRequest approved = AbsenceRequest.builder()
+                .id(UUID.randomUUID())
+                .user(employee)
+                .manager(manager)
+                .status(AbsenceStatus.APPROVED)
+                .startDate(LocalDate.now().minusDays(3))
+                .endDate(LocalDate.now().minusDays(1))
+                .type(AbsenceType.SICK)
+                .build();
+        when(absenceRequestRepository.findByStatusAndEndDateBefore(AbsenceStatus.APPROVED, LocalDate.now()))
+                .thenReturn(List.of(approved));
+        when(absenceRequestRepository.saveAll(any())).thenReturn(List.of(approved));
+
+        int count = absenceService.completeExpiredApproved(LocalDate.now());
+
+        assertThat(count).isEqualTo(1);
+        assertThat(approved.getStatus()).isEqualTo(AbsenceStatus.COMPLETED);
     }
 }

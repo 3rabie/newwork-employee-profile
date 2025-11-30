@@ -14,6 +14,7 @@ import com.newwork.employee.entity.enums.WorkLocationType;
 import com.newwork.employee.repository.AbsenceRequestRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
+import com.newwork.employee.service.AbsenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.assertj.core.api.Assertions;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -73,6 +75,8 @@ class EmployeeGraphQLControllerIntegrationTest {
 
     @Autowired
     private AbsenceRequestRepository absenceRequestRepository;
+    @Autowired
+    private AbsenceService absenceService;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -192,6 +196,20 @@ class EmployeeGraphQLControllerIntegrationTest {
         performGraphQL(engineerToken, query)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.errors[0].extensions.classification").value("FORBIDDEN"));
+    }
+
+    @Test
+    @DisplayName("Scheduled completion marks approved past requests as COMPLETED")
+    void shouldCompleteExpiredApproved() {
+        AbsenceRequest approved = createAbsence(engineer, manager, AbsenceStatus.APPROVED);
+        approved.setStartDate(LocalDate.now().minusDays(3));
+        approved.setEndDate(LocalDate.now().minusDays(1));
+        absenceRequestRepository.save(approved);
+
+        absenceService.completeExpiredApproved(LocalDate.now());
+
+        AbsenceRequest refreshed = absenceRequestRepository.findById(approved.getId()).orElseThrow();
+        Assertions.assertThat(refreshed.getStatus()).isEqualTo(AbsenceStatus.COMPLETED);
     }
 
     private ResultActions performGraphQL(String token, String query) throws Exception {

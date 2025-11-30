@@ -100,6 +100,16 @@ public class AbsenceServiceImpl implements AbsenceService {
         };
     }
 
+    @Override
+    @Transactional
+    public int completeExpiredApproved(LocalDate asOfDate) {
+        List<AbsenceRequest> toComplete = absenceRequestRepository.findByStatusAndEndDateBefore(
+                AbsenceStatus.APPROVED, asOfDate);
+        toComplete.forEach(ar -> ar.setStatus(AbsenceStatus.COMPLETED));
+        absenceRequestRepository.saveAll(toComplete);
+        return toComplete.size();
+    }
+
     private void validateDates(LocalDate start, LocalDate end) {
         if (end.isBefore(start)) {
             throw new IllegalArgumentException("End date cannot be before start date");
