@@ -7,6 +7,20 @@ import { AuthProvider } from '../../../auth/contexts/AuthContext';
 import { ProtectedRoute } from '../../../auth/components/ProtectedRoute';
 import { httpClient } from '../../../../lib/http-client';
 import type { ProfileDTO } from '../../types';
+import type { FeedbackListItem } from '../../../feedback/types';
+
+const mockGetFeedbackForUser = vi.fn();
+const mockCreateFeedback = vi.fn();
+
+vi.mock('../../../feedback/api/feedbackApi', () => ({
+  getFeedbackForUser: (...args: unknown[]) => mockGetFeedbackForUser(...args),
+  createFeedback: (...args: unknown[]) => mockCreateFeedback(...args),
+}));
+
+const mockPolishFeedback = vi.fn();
+vi.mock('../../../feedback/api/polishFeedback', () => ({
+  polishFeedback: (...args: unknown[]) => mockPolishFeedback(...args),
+}));
 
 const mockProfile: ProfileDTO = {
   id: 'profile-1',
@@ -44,6 +58,23 @@ const mockProfile: ProfileDTO = {
   absenceBalanceDays: 10,
   salary: 100000,
   performanceRating: 'EXCEEDS',
+};
+
+const sampleFeedback: FeedbackListItem = {
+  id: 'fb-1',
+  text: 'Great teamwork everyone!',
+  aiPolished: true,
+  createdAt: '2024-02-01T10:00:00Z',
+  author: {
+    id: 'user-2',
+    email: 'coworker@test.com',
+    preferredName: 'Coworker',
+  },
+  recipient: {
+    id: 'user-1',
+    email: 'test.person@company.com',
+    preferredName: 'Test Person',
+  },
 };
 
 describe('ProfilePage E2E flow', () => {
@@ -92,6 +123,12 @@ describe('ProfilePage E2E flow', () => {
     httpPatchSpy.mockResolvedValue({
       data: { ...mockProfile, jobTitle: 'Director of Engineering' },
     });
+    mockGetFeedbackForUser.mockResolvedValue([sampleFeedback]);
+    mockCreateFeedback.mockResolvedValue(sampleFeedback);
+    mockPolishFeedback.mockResolvedValue({
+      originalText: 'Team is doing well',
+      polishedText: 'Team is doing well and I appreciate the collaboration.',
+    });
   });
 
   afterEach(() => {
@@ -125,5 +162,46 @@ describe('ProfilePage E2E flow', () => {
         screen.getAllByText('Director of Engineering').length
       ).toBeGreaterThan(0)
     );
+  });
+
+  it('allows giving AI-polished feedback to another user', async () => {
+    sessionStorage.setItem(
+      'auth_user',
+      JSON.stringify({
+        userId: 'user-2',
+        email: 'coworker@test.com',
+        employeeId: 'EMP-002',
+        role: 'EMPLOYEE',
+        managerId: 'user-1',
+      })
+    );
+
+    renderApp();
+
+    await screen.findByText(/feedback/i);
+
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /give feedback/i }));
+
+    const textArea = screen.getByPlaceholderText(/share actionable/i);
+    await user.type(textArea, 'Team is doing well');
+
+    await user.click(screen.getByRole('button', { name: /polish with ai/i }));
+    await waitFor(() =>
+      expect(
+        screen.getByText(/team is doing well and i appreciate/i)
+      ).toBeInTheDocument()
+    );
+
+    await user.click(screen.getByRole('button', { name: /use polished version/i }));
+    await user.click(screen.getByRole('button', { name: /send feedback/i }));
+
+    await waitFor(() => {
+      expect(mockCreateFeedback).toHaveBeenCalledWith({
+        recipientId: 'user-1',
+        text: 'Team is doing well and I appreciate the collaboration.',
+        aiPolished: true,
+      });
+    });
   });
 });

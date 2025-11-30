@@ -1,0 +1,64 @@
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.feedback-list--loading,
+.feedback-list--empty {
+  padding: 1rem;
+  border: 1px dashed #cbd5f5;
+  border-radius: 8px;
+  color: #4a5568;
+  background: #f8fbff;
+}
+
+.feedback-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.05);
+}
+
+.feedback-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 1rem;
+}
+
+.feedback-card__author {
+  font-weight: 600;
+  margin: 0;
+  color: #0f172a;
+}
+
+.feedback-card__timestamp {
+  font-size: 0.85rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+}
+
+.feedback-card__badge {
+  font-size: 0.7rem;
+  color: #0f172a;
+  background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid #bae6fd;
+}
+
+.feedback-card__text {
+  margin: 0;
+  line-height: 1.5;
+  color: #1f2933;
+  white-space: pre-line;
+}

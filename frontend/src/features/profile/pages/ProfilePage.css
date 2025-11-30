@@ -81,6 +81,29 @@
   gap: 2rem;
 }
 
+.profile-panel {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.profile-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.profile-panel__helper {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
 /* Section */
 .profile-section {
   background-color: #ffffff;

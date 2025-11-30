@@ -13,6 +13,10 @@ import ProfileSection from '../components/ProfileSection';
 import { getProfile, updateProfile } from '../api/profileApi';
 import type { ProfileDTO, ProfileUpdateDTO, FieldMetadata } from '../types';
 import { FieldType } from '../types';
+import { FeedbackList } from '../../feedback/components/FeedbackList';
+import { FeedbackModal } from '../../feedback/components/FeedbackModal';
+import { getFeedbackForUser } from '../../feedback/api/feedbackApi';
+import type { FeedbackListItem } from '../../feedback/types';
 import './ProfilePage.css';
 
 type ApiErrorResponse = {
@@ -43,12 +47,18 @@ const ProfilePage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [feedbackItems, setFeedbackItems] = useState<FeedbackListItem[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [isFeedbackModalOpen, setFeedbackModalOpen] = useState(false);
 
   const isSelf = user?.userId === userId;
+  const canGiveFeedback = Boolean(user?.userId && userId && user?.userId !== userId);
 
   useEffect(() => {
     if (userId) {
       loadProfile(userId);
+      loadFeedback(userId);
     }
   }, [userId]);
 
@@ -62,6 +72,19 @@ const ProfilePage: React.FC = () => {
       setError(getErrorMessage(err, 'Failed to load profile'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFeedback = async (id: string) => {
+    try {
+      setFeedbackLoading(true);
+      setFeedbackError(null);
+      const data = await getFeedbackForUser(id);
+      setFeedbackItems(data);
+    } catch (err: unknown) {
+      setFeedbackError(getErrorMessage(err, 'Failed to load feedback'));
+    } finally {
+      setFeedbackLoading(false);
     }
   };
 
@@ -321,7 +344,38 @@ const ProfilePage: React.FC = () => {
           onChange={handleFieldChange}
           fieldErrors={fieldErrors}
         />
+
+        <section className="profile-panel">
+          <div className="profile-panel__header">
+            <div>
+              <h2>Feedback</h2>
+              <p className="profile-panel__helper">
+                Feedback is private between the author, recipient, and their managers.
+              </p>
+            </div>
+            {canGiveFeedback && (
+              <button className="btn-primary" onClick={() => setFeedbackModalOpen(true)}>
+                Give Feedback
+              </button>
+            )}
+          </div>
+          {feedbackError && <div className="profile-error-message">{feedbackError}</div>}
+          <FeedbackList
+            items={feedbackItems}
+            isLoading={feedbackLoading}
+            emptyState="No feedback for this teammate yet."
+          />
+        </section>
       </div>
+      {canGiveFeedback && (
+        <FeedbackModal
+          recipientId={profile.userId}
+          recipientDisplayName={`${profile.preferredName || profile.legalFirstName} ${profile.legalLastName}`}
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setFeedbackModalOpen(false)}
+          onCreated={(item) => setFeedbackItems((prev) => [item, ...prev])}
+        />
+      )}
     </div>
   );
 };

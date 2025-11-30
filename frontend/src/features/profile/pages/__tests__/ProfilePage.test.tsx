@@ -8,10 +8,15 @@ import { AuthProvider } from '../../../auth/contexts/AuthContext';
 
 const mockGetProfile = vi.fn();
 const mockUpdateProfile = vi.fn();
+const mockGetFeedbackForUser = vi.fn();
 
 vi.mock('../../api/profileApi', () => ({
   getProfile: (...args: unknown[]) => mockGetProfile(...args),
   updateProfile: (...args: unknown[]) => mockUpdateProfile(...args),
+}));
+
+vi.mock('../../../feedback/api/feedbackApi', () => ({
+  getFeedbackForUser: (...args: unknown[]) => mockGetFeedbackForUser(...args),
 }));
 
 const renderProfilePage = () => {
@@ -80,6 +85,7 @@ describe('ProfilePage', () => {
     vi.clearAllMocks();
     mockGetProfile.mockResolvedValue(baseProfile);
     mockUpdateProfile.mockResolvedValue(baseProfile);
+    mockGetFeedbackForUser.mockResolvedValue([]);
   });
 
   afterEach(() => {
