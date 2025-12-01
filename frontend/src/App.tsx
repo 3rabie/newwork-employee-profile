@@ -5,6 +5,7 @@ import { LoginPage } from './features/auth/pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import ProfilePage from './features/profile/pages/ProfilePage';
 import { DirectoryPage } from './features/directory/pages/DirectoryPage';
+import { AbsencePage } from './features/absence/pages/AbsencePage';
 
 function App() {
   return (
@@ -33,6 +34,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DirectoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/absences"
+            element={
+              <ProtectedRoute>
+                <AbsencePage />
               </ProtectedRoute>
             }
           />

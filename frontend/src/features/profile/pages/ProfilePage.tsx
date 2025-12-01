@@ -18,6 +18,17 @@ import { FeedbackModal } from '../../feedback/components/FeedbackModal';
 import { getFeedbackForUser } from '../../feedback/api/feedbackApi';
 import type { FeedbackListItem } from '../../feedback/types';
 import { GraphQLRequestError } from '../../../lib/graphql-client';
+import {
+  getMyAbsenceRequests,
+  submitAbsenceRequest
+} from '../../absence/api/absenceApi';
+import type {
+  AbsenceRequest,
+  CreateAbsenceRequestInput,
+  AbsenceType
+} from '../../absence/types';
+import { graphqlRequest } from '../../../lib/graphql-client';
+import { GET_COWORKER_DIRECTORY_QUERY } from '../../../lib/graphql-queries';
 import './ProfilePage.css';
 
 type ApiErrorResponse = {
@@ -53,6 +64,19 @@ const ProfilePage: React.FC = () => {
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackForbidden, setFeedbackForbidden] = useState(false);
   const [isFeedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [absenceRequests, setAbsenceRequests] = useState<AbsenceRequest[]>([]);
+  const [absenceLoading, setAbsenceLoading] = useState(false);
+  const [absenceError, setAbsenceError] = useState<string | null>(null);
+  const [absenceSuccess, setAbsenceSuccess] = useState<string | null>(null);
+  const [absenceSubmitting, setAbsenceSubmitting] = useState(false);
+  const [absenceForm, setAbsenceForm] = useState<CreateAbsenceRequestInput>({
+    startDate: '',
+    endDate: '',
+    type: 'VACATION',
+    note: ''
+  });
+  const [absenceFormErrors, setAbsenceFormErrors] = useState<Record<string, string>>({});
+  const [personLookup, setPersonLookup] = useState<Record<string, { name: string; employeeId?: string }>>({});
 
   const isSelf = user?.userId === userId;
   const canGiveFeedback = Boolean(user?.userId && userId && user?.userId !== userId);
@@ -64,8 +88,13 @@ const ProfilePage: React.FC = () => {
     if (userId) {
       loadProfile(userId);
       loadFeedback(userId);
+      if (isSelf) {
+        loadAbsences();
+      } else {
+        loadDirectory();
+      }
     }
-  }, [userId]);
+  }, [userId, isSelf]);
 
   const loadProfile = async (id: string) => {
     try {
@@ -105,6 +134,47 @@ const ProfilePage: React.FC = () => {
         setFeedbackError(message);
     } finally {
       setFeedbackLoading(false);
+    }
+  };
+
+  const loadAbsences = async () => {
+    try {
+      setAbsenceLoading(true);
+      setAbsenceError(null);
+      const data = await getMyAbsenceRequests();
+      setAbsenceRequests(data);
+    } catch (err: unknown) {
+      setAbsenceError(getErrorMessage(err, 'Failed to load absences'));
+    } finally {
+      setAbsenceLoading(false);
+    }
+  };
+
+  const loadDirectory = async () => {
+    try {
+      const data = await graphqlRequest<{
+        coworkerDirectory: Array<{
+          userId: string;
+          preferredName?: string;
+          legalFirstName: string;
+          legalLastName: string;
+          employeeId: string;
+        }>;
+      }>(GET_COWORKER_DIRECTORY_QUERY);
+
+      const map = data.coworkerDirectory.reduce<Record<string, { name: string; employeeId: string }>>(
+        (acc, person) => {
+          const name = person.preferredName
+            ? `${person.preferredName} ${person.legalLastName}`
+            : `${person.legalFirstName} ${person.legalLastName}`;
+          acc[person.userId] = { name, employeeId: person.employeeId };
+          return acc;
+        },
+        {}
+      );
+      setPersonLookup(map);
+    } catch {
+      // Best effort, ignore errors here
     }
   };
 
@@ -175,6 +245,84 @@ const ProfilePage: React.FC = () => {
     }
 
     return errors;
+  };
+
+  const validateAbsenceForm = (form: CreateAbsenceRequestInput) => {
+    const errors: Record<string, string> = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!form.startDate) {
+      errors.startDate = 'Start date is required';
+    }
+    if (!form.endDate) {
+      errors.endDate = 'End date is required';
+    }
+    if (form.startDate && form.endDate) {
+      const start = new Date(form.startDate);
+      const end = new Date(form.endDate);
+      const isSick = form.type === 'SICK';
+
+      if (!isSick && start < today) {
+        errors.startDate = 'Start date must be today or later';
+      }
+      if (!isSick && end < today) {
+        errors.endDate = 'End date must be today or later';
+      }
+      if (end < start) {
+        errors.endDate = 'End date cannot be before start date';
+      }
+      const maxDurationDays = 30;
+      const durationMs = end.getTime() - start.getTime();
+      if (!errors.endDate && durationMs / (1000 * 60 * 60 * 24) > maxDurationDays) {
+        errors.endDate = 'Absence cannot exceed 30 days';
+      }
+    }
+    if (form.note && form.note.length > 200) {
+      errors.note = 'Note must be 200 characters or less';
+    }
+    return errors;
+  };
+
+  const handleAbsenceFormChange = (
+    field: keyof CreateAbsenceRequestInput,
+    value: string
+  ) => {
+    setAbsenceForm((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+    setAbsenceFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const { [field]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const handleAbsenceSubmit = async () => {
+    const validationErrors = validateAbsenceForm(absenceForm);
+    if (Object.keys(validationErrors).length > 0) {
+      setAbsenceFormErrors(validationErrors);
+      return;
+    }
+    try {
+      setAbsenceSubmitting(true);
+      setAbsenceError(null);
+      setAbsenceSuccess(null);
+      await submitAbsenceRequest(absenceForm);
+      setAbsenceSuccess('Absence request submitted');
+      setAbsenceForm({
+        startDate: '',
+        endDate: '',
+        type: absenceForm.type as AbsenceType,
+        note: ''
+      });
+      await loadAbsences();
+    } catch (err: unknown) {
+      setAbsenceError(getErrorMessage(err, 'Failed to submit absence request'));
+    } finally {
+      setAbsenceSubmitting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -306,6 +454,10 @@ const ProfilePage: React.FC = () => {
     )
   };
 
+  const sortedAbsences = [...absenceRequests].sort(
+    (a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+  );
+
   return (
     <div className="profile-page">
       <div className="profile-header">
@@ -314,6 +466,18 @@ const ProfilePage: React.FC = () => {
             {profile.preferredName || profile.legalFirstName} {profile.legalLastName}
           </h1>
           <p className="profile-subtitle">{profile.jobTitle || 'Employee'}</p>
+          {isSelf && (
+            <div className="inline-badges">
+              <span className="badge-neutral">
+                Pending absences:{' '}
+                {absenceRequests.filter((a) => a.status === 'PENDING').length}
+              </span>
+              <span className="badge-neutral">
+                Approved:{' '}
+                {absenceRequests.filter((a) => a.status === 'APPROVED').length}
+              </span>
+            </div>
+          )}
         </div>
         <div className="profile-header-actions">
           {!isEditMode ? (
@@ -377,6 +541,123 @@ const ProfilePage: React.FC = () => {
           fieldErrors={fieldErrors}
         />
 
+        {isSelf && (
+          <section className="profile-panel">
+            <div className="profile-panel__header">
+              <div>
+                <h2>Absence Requests</h2>
+                <p className="profile-panel__helper">
+                  Submit time off and track approvals.
+                </p>
+              </div>
+            </div>
+
+            <div className="absence-grid">
+              <div className="absence-form">
+                <div className="form-row">
+                  <div className="form-field">
+                    <label htmlFor="absence-type">Type</label>
+                    <select
+                      id="absence-type"
+                      value={absenceForm.type}
+                      onChange={(e) => handleAbsenceFormChange('type', e.target.value)}
+                    >
+                      <option value="VACATION">Vacation</option>
+                      <option value="SICK">Sick</option>
+                      <option value="PERSONAL">Personal</option>
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <label htmlFor="absence-start">Start Date</label>
+                    <input
+                      id="absence-start"
+                      type="date"
+                      value={absenceForm.startDate}
+                      onChange={(e) => handleAbsenceFormChange('startDate', e.target.value)}
+                    />
+                    {absenceFormErrors.startDate && (
+                      <span className="field-error">{absenceFormErrors.startDate}</span>
+                    )}
+                  </div>
+                  <div className="form-field">
+                    <label htmlFor="absence-end">End Date</label>
+                    <input
+                      id="absence-end"
+                      type="date"
+                      value={absenceForm.endDate}
+                      onChange={(e) => handleAbsenceFormChange('endDate', e.target.value)}
+                    />
+                    {absenceFormErrors.endDate && (
+                      <span className="field-error">{absenceFormErrors.endDate}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-field full-width">
+                    <label htmlFor="absence-note">Note (optional)</label>
+                    <textarea
+                      id="absence-note"
+                      maxLength={200}
+                      value={absenceForm.note || ''}
+                      onChange={(e) => handleAbsenceFormChange('note', e.target.value)}
+                      placeholder="Add context for your manager (max 200 chars)"
+                    />
+                    {absenceFormErrors.note && (
+                      <span className="field-error">{absenceFormErrors.note}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="form-actions">
+                  <button
+                    className="btn-primary"
+                    onClick={handleAbsenceSubmit}
+                    disabled={absenceSubmitting}
+                  >
+                    {absenceSubmitting ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                  {absenceSuccess && (
+                    <span className="success-text">{absenceSuccess}</span>
+                  )}
+                  {absenceError && <span className="field-error">{absenceError}</span>}
+                </div>
+              </div>
+
+              <div className="absence-list">
+                <div className="absence-list__header">
+                  <h3>My Requests</h3>
+                  <span className="badge-neutral">{absenceRequests.length}</span>
+                </div>
+                {absenceLoading ? (
+                  <p>Loading absences...</p>
+                ) : absenceError ? (
+                  <div className="profile-error-message">{absenceError}</div>
+                ) : sortedAbsences.length === 0 ? (
+                  <p className="muted">No absence requests yet.</p>
+                ) : (
+                  <ul className="absence-list__items">
+                    {sortedAbsences.map((item) => (
+                      <li key={item.id} className="absence-list__item">
+                        <div className="absence-list__item-header">
+                          <span className={`status-badge status-${item.status.toLowerCase()}`}>
+                            {item.status}
+                          </span>
+                          <span className="absence-dates">
+                            {item.startDate} &rarr; {item.endDate}
+                          </span>
+                        </div>
+                        <div className="absence-meta">
+                          <span className="pill">{item.type}</span>
+                          {item.note && <span className="muted">Note: {item.note}</span>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         <section className="profile-panel">
           <div className="profile-panel__header">
             <div>
@@ -421,3 +702,7 @@ const ProfilePage: React.FC = () => {
 };
 
 export default ProfilePage;
+
+
+
+

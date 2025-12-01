@@ -150,3 +150,39 @@ export const GET_COWORKER_DIRECTORY_QUERY = gql`
     }
   }
 `;
+
+/**
+ * GraphQL query to fetch the authenticated user's absence requests
+ */
+export const GET_MY_ABSENCES_QUERY = gql`
+  query MyAbsenceRequests {
+    myAbsenceRequests {
+      id
+      userId
+      managerId
+      startDate
+      endDate
+      type
+      status
+      note
+    }
+  }
+`;
+
+/**
+ * GraphQL query to fetch pending absence requests for managers
+ */
+export const GET_PENDING_ABSENCES_QUERY = gql`
+  query PendingAbsenceRequests {
+    pendingAbsenceRequests {
+      id
+      userId
+      managerId
+      startDate
+      endDate
+      type
+      status
+      note
+    }
+  }
+`;

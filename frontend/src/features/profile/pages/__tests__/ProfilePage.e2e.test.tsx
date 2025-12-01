@@ -122,8 +122,19 @@ describe('ProfilePage E2E flow', () => {
     vi.useRealTimers();
     sessionStorage.clear();
     seedAuthSession();
-    httpPostSpy.mockResolvedValue({
-      data: { data: { profile: mockProfile } },
+    httpPostSpy.mockImplementation((url, data) => {
+      const query: string = (data as any)?.query ?? '';
+      if (query.includes('myAbsenceRequests')) {
+        return Promise.resolve({ data: { data: { myAbsenceRequests: [] } } });
+      }
+      if (query.includes('pendingAbsenceRequests')) {
+        return Promise.resolve({ data: { data: { pendingAbsenceRequests: [] } } });
+      }
+      if (query.includes('coworkerDirectory')) {
+        return Promise.resolve({ data: { data: { coworkerDirectory: [] } } });
+      }
+      // default profile fetch
+      return Promise.resolve({ data: { data: { profile: mockProfile } } });
     });
     httpPatchSpy.mockResolvedValue({
       data: { ...mockProfile, jobTitle: 'Director of Engineering' },

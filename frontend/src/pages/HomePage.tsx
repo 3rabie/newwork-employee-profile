@@ -74,6 +74,12 @@ export function HomePage() {
               >
                 Browse People Directory
               </button>
+              <button
+                className="btn-secondary"
+                onClick={() => navigate('/absences')}
+              >
+                Manage Absences
+              </button>
             </div>
           </div>
         </div>
