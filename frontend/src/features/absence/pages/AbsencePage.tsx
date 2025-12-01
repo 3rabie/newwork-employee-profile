@@ -173,7 +173,7 @@ export const AbsencePage: React.FC = () => {
           </p>
         </div>
         <div className="absence-header-actions">
-          <button className="btn-secondary" onClick={() => navigate(-1)}>
+          <button className="btn-secondary btn-back" onClick={() => navigate(-1)}>
             Back
           </button>
           {isManager && (

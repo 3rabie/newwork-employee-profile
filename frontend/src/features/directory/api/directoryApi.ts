@@ -10,12 +10,15 @@ interface CoworkerDirectoryResponse {
  * Fetch coworker directory entries with optional filters.
  */
 export async function getCoworkerDirectory(filters?: DirectoryFilters) {
-  const variables: Record<string, string> = {};
+  const variables: Record<string, string | boolean> = {};
   if (filters?.search) {
     variables.search = filters.search;
   }
   if (filters?.department) {
     variables.department = filters.department;
+  }
+  if (filters?.directReportsOnly) {
+    variables.directReportsOnly = true;
   }
 
   const data = await graphqlRequest<CoworkerDirectoryResponse>(

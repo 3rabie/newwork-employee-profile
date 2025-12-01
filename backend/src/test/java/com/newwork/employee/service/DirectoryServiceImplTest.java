@@ -6,6 +6,7 @@ import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.EmploymentStatus;
 import com.newwork.employee.entity.enums.Relationship;
 import com.newwork.employee.entity.enums.WorkLocationType;
+import com.newwork.employee.repository.AbsenceRequestRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.impl.DirectoryServiceImpl;
@@ -36,6 +37,9 @@ class DirectoryServiceImplTest {
 
     @Mock
     private PermissionService permissionService;
+
+    @Mock
+    private AbsenceRequestRepository absenceRequestRepository;
 
     @InjectMocks
     private DirectoryServiceImpl directoryService;
@@ -102,8 +106,10 @@ class DirectoryServiceImplTest {
                 .thenReturn(Relationship.MANAGER);
         when(permissionService.determineRelationship(viewer, coworkerUser))
                 .thenReturn(Relationship.COWORKER);
+        when(absenceRequestRepository.countByManagerAndUserAndStatus(any(), any(), any()))
+                .thenReturn(0L);
 
-        List<CoworkerDTO> result = directoryService.getDirectory(viewer.getId(), null, null);
+        List<CoworkerDTO> result = directoryService.getDirectory(viewer.getId(), null, null, null);
 
         assertThat(result).hasSize(2);
         CoworkerDTO first = result.get(0);
@@ -128,13 +134,35 @@ class DirectoryServiceImplTest {
                 .thenReturn(Relationship.COWORKER);
 
         List<CoworkerDTO> result = directoryService.getDirectory(
-                viewer.getId(), "prod", "product");
+                viewer.getId(), "prod", "product", null);
 
         assertThat(result)
                 .singleElement()
                 .satisfies(dto -> {
                     assertThat(dto.getEmployeeId()).isEqualTo("EMP-020");
                     assertThat(dto.getDepartment()).isEqualTo("Product");
+                });
+    }
+
+    @Test
+    void shouldReturnOnlyDirectReportsWhenRequested() {
+        when(userRepository.findById(viewer.getId())).thenReturn(Optional.of(viewer));
+        when(profileRepository.findAllActiveProfilesWithUserAndManager())
+                .thenReturn(List.of(directReportProfile, coworkerProfile));
+        when(permissionService.determineRelationship(viewer, directReportUser))
+                .thenReturn(Relationship.MANAGER);
+        when(permissionService.determineRelationship(viewer, coworkerUser))
+                .thenReturn(Relationship.COWORKER);
+        when(absenceRequestRepository.countByManagerAndUserAndStatus(any(), any(), any()))
+                .thenReturn(2L);
+
+        List<CoworkerDTO> result = directoryService.getDirectory(viewer.getId(), null, null, true);
+
+        assertThat(result)
+                .singleElement()
+                .satisfies(dto -> {
+                    assertThat(dto.isDirectReport()).isTrue();
+                    assertThat(dto.getPendingAbsenceCount()).isEqualTo(2);
                 });
     }
 }

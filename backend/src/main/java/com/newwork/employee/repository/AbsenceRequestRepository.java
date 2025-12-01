@@ -41,6 +41,17 @@ public interface AbsenceRequestRepository extends JpaRepository<AbsenceRequest, 
             @Param("status") AbsenceStatus status);
 
     @Query("""
+            select count(ar) from AbsenceRequest ar
+            where ar.manager.id = :managerId
+              and ar.user.id = :userId
+              and ar.status = :status
+            """)
+    long countByManagerAndUserAndStatus(
+            @Param("managerId") UUID managerId,
+            @Param("userId") UUID userId,
+            @Param("status") AbsenceStatus status);
+
+    @Query("""
             select ar from AbsenceRequest ar
             join fetch ar.user u
             left join fetch ar.manager m

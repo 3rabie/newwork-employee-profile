@@ -67,6 +67,12 @@
   border: 1px solid #d1d5db;
 }
 
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .btn-secondary:hover:not(:disabled) {
   background: #f9fafb;
 }

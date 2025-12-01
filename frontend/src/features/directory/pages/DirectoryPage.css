@@ -84,6 +84,14 @@
   margin-top: 1.25rem;
 }
 
+.directory-toggle .toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1f2937;
+  font-weight: 500;
+}
+
 .directory-error,
 .directory-loading,
 .directory-empty {
@@ -125,6 +133,7 @@
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  position: relative;
 }
 
 .directory-card__avatar {
@@ -144,16 +153,36 @@
   flex: 1;
 }
 
+.directory-card__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .directory-card__title {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .directory-card__title h2 {
   margin: 0;
   font-size: 1.125rem;
   color: #0f172a;
+}
+
+.directory-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 999px;
+  min-width: 28px;
+  padding: 0.25rem 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  font-size: 0.9rem;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .directory-pill {
@@ -179,6 +208,12 @@
   margin: 0;
   color: #94a3b8;
   font-size: 0.875rem;
+}
+
+.directory-card__pending {
+  margin: 0.15rem 0 0;
+  color: #92400e;
+  font-weight: 600;
 }
 
 .directory-card__actions {

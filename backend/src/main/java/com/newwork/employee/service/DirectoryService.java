@@ -16,7 +16,8 @@ public interface DirectoryService {
      * @param viewerId   authenticated user ID
      * @param searchTerm optional search term (name, email, employeeId, department)
      * @param department optional department filter
+     * @param directReportsOnly limit results to direct reports of the viewer (manager-only)
      * @return ordered list of coworker DTOs
      */
-    List<CoworkerDTO> getDirectory(UUID viewerId, String searchTerm, String department);
+    List<CoworkerDTO> getDirectory(UUID viewerId, String searchTerm, String department, Boolean directReportsOnly);
 }

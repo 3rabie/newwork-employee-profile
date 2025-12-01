@@ -6,6 +6,7 @@ import com.newwork.employee.dto.request.UpdateAbsenceStatusRequest;
 import com.newwork.employee.entity.AbsenceRequest;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.AbsenceStatus;
+import com.newwork.employee.entity.enums.AbsenceType;
 import com.newwork.employee.repository.AbsenceRequestRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.AbsenceService;
@@ -29,7 +30,7 @@ public class AbsenceServiceImpl implements AbsenceService {
     @Override
     @Transactional
     public AbsenceRequestDTO submit(UUID requesterId, CreateAbsenceRequest request) {
-        validateDates(request.startDate(), request.endDate());
+        validateDates(request.startDate(), request.endDate(), request.type());
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         User manager = requester.getManager();
@@ -110,9 +111,18 @@ public class AbsenceServiceImpl implements AbsenceService {
         return toComplete.size();
     }
 
-    private void validateDates(LocalDate start, LocalDate end) {
+    private void validateDates(LocalDate start, LocalDate end, AbsenceType type) {
         if (end.isBefore(start)) {
             throw new IllegalArgumentException("End date cannot be before start date");
+        }
+        LocalDate today = LocalDate.now();
+        if (type != AbsenceType.SICK) {
+            if (start.isBefore(today)) {
+                throw new IllegalArgumentException("Start date must be today or later for this type");
+            }
+            if (end.isBefore(today)) {
+                throw new IllegalArgumentException("End date must be today or later for this type");
+            }
         }
     }
 

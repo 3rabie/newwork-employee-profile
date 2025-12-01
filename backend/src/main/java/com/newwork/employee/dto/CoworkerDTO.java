@@ -27,4 +27,5 @@ public class CoworkerDTO {
     private String profilePhotoUrl;
     private String relationship;
     private boolean directReport;
+    private Integer pendingAbsenceCount;
 }

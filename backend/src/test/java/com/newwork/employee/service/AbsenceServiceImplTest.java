@@ -171,6 +171,37 @@ class AbsenceServiceImplTest {
     }
 
     @Test
+    void submitShouldAllowPastDatesForSickLeave() {
+        CreateAbsenceRequest dto = new CreateAbsenceRequest(
+                LocalDate.now().minusDays(3),
+                LocalDate.now().minusDays(1),
+                AbsenceType.SICK,
+                "Was ill"
+        );
+        when(userRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
+        when(absenceRequestRepository.save(any(AbsenceRequest.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        var result = absenceService.submit(employee.getId(), dto);
+
+        assertThat(result.getType()).isEqualTo(AbsenceType.SICK);
+        assertThat(result.getStatus()).isEqualTo(AbsenceStatus.PENDING);
+    }
+
+    @Test
+    void submitShouldRejectPastDatesForVacation() {
+        CreateAbsenceRequest dto = new CreateAbsenceRequest(
+                LocalDate.now().minusDays(2),
+                LocalDate.now().minusDays(1),
+                AbsenceType.VACATION,
+                "Too late"
+        );
+
+        assertThatThrownBy(() -> absenceService.submit(employee.getId(), dto))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
     void completeExpiredApprovedShouldMarkCompleted() {
         AbsenceRequest approved = AbsenceRequest.builder()
                 .id(UUID.randomUUID())

@@ -3,8 +3,10 @@ package com.newwork.employee.service.impl;
 import com.newwork.employee.dto.CoworkerDTO;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.User;
+import com.newwork.employee.entity.enums.AbsenceStatus;
 import com.newwork.employee.entity.enums.Relationship;
 import com.newwork.employee.exception.UserNotFoundException;
+import com.newwork.employee.repository.AbsenceRequestRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.DirectoryService;
@@ -28,16 +30,18 @@ public class DirectoryServiceImpl implements DirectoryService {
 
     private final EmployeeProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final AbsenceRequestRepository absenceRequestRepository;
     private final PermissionService permissionService;
 
     @Override
     @Transactional(readOnly = true)
-    public List<CoworkerDTO> getDirectory(UUID viewerId, String searchTerm, String department) {
+    public List<CoworkerDTO> getDirectory(UUID viewerId, String searchTerm, String department, Boolean directReportsOnly) {
         User viewer = userRepository.findById(viewerId)
                 .orElseThrow(() -> new UserNotFoundException("Viewer not found with id: " + viewerId));
 
         String normalizedSearch = normalize(searchTerm);
         String normalizedDepartment = normalize(department);
+        boolean onlyDirectReports = Boolean.TRUE.equals(directReportsOnly);
 
         List<EmployeeProfile> profiles = profileRepository.findAllActiveProfilesWithUserAndManager();
         log.debug("Loaded {} active profiles for directory listing", profiles.size());
@@ -46,7 +50,8 @@ public class DirectoryServiceImpl implements DirectoryService {
                 .filter(profile -> !profile.getUser().getId().equals(viewerId))
                 .filter(profile -> matchesSearch(profile, normalizedSearch))
                 .filter(profile -> matchesDepartment(profile, normalizedDepartment))
-                .map(profile -> mapToDto(viewer, profile))
+                .map(profile -> mapToDto(viewer, profile, onlyDirectReports))
+                .filter(dto -> dto != null)
                 .sorted(Comparator.comparing(CoworkerDTO::getPreferredName, DirectoryServiceImpl::compareNullableStrings)
                         .thenComparing(CoworkerDTO::getLegalFirstName, DirectoryServiceImpl::compareNullableStrings))
                 .collect(Collectors.toList());
@@ -89,10 +94,21 @@ public class DirectoryServiceImpl implements DirectoryService {
         return departmentFilter.equals(profileDepartment);
     }
 
-    private CoworkerDTO mapToDto(User viewer, EmployeeProfile profile) {
+    private CoworkerDTO mapToDto(User viewer, EmployeeProfile profile, boolean onlyDirectReports) {
         User profileOwner = profile.getUser();
         Relationship relationship = permissionService.determineRelationship(viewer, profileOwner);
         String relationshipLabel = relationship == Relationship.COWORKER ? "OTHER" : relationship.name();
+
+        if (onlyDirectReports && relationship != Relationship.MANAGER) {
+            return null;
+        }
+
+        Integer pendingAbsenceCount = null;
+        if (relationship == Relationship.MANAGER) {
+            long pending = absenceRequestRepository.countByManagerAndUserAndStatus(
+                    viewer.getId(), profileOwner.getId(), AbsenceStatus.PENDING);
+            pendingAbsenceCount = Math.toIntExact(pending);
+        }
 
         return CoworkerDTO.builder()
                 .userId(profileOwner.getId())
@@ -110,6 +126,7 @@ public class DirectoryServiceImpl implements DirectoryService {
                 .profilePhotoUrl(profile.getProfilePhotoUrl())
                 .relationship(relationshipLabel)
                 .directReport(relationship == Relationship.MANAGER)
+                .pendingAbsenceCount(pendingAbsenceCount)
                 .build();
     }
 }

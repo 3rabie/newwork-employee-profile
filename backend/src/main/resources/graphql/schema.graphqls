@@ -16,7 +16,7 @@ type Query {
     List coworkers and direct reports visible to the authenticated user.
     Optional filters allow searching by name/email/employee ID and limiting by department.
     """
-    coworkerDirectory(search: String, department: String): [Coworker!]!
+    coworkerDirectory(search: String, department: String, directReportsOnly: Boolean): [Coworker!]!
 
     """
     Get all feedback visible to the authenticated user for a specific user.
@@ -218,6 +218,7 @@ type Coworker {
     profilePhotoUrl: String
     relationship: String!
     directReport: Boolean!
+    pendingAbsenceCount: Int
 }
 
 """Absence request record"""

@@ -39,8 +39,9 @@ public class EmployeeGraphQLController {
     public List<CoworkerDTO> coworkerDirectory(
             @Argument String search,
             @Argument String department,
+            @Argument Boolean directReportsOnly,
             @AuthenticationPrincipal AuthenticatedUser authenticatedUser) {
-        return directoryService.getDirectory(authenticatedUser.getUserId(), search, department);
+        return directoryService.getDirectory(authenticatedUser.getUserId(), search, department, directReportsOnly);
     }
 
     @QueryMapping

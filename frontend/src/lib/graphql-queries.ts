@@ -134,8 +134,8 @@ export const GET_MY_RECEIVED_FEEDBACK_QUERY = gql`
  * GraphQL query to fetch coworker directory entries
  */
 export const GET_COWORKER_DIRECTORY_QUERY = gql`
-  query GetCoworkerDirectory($search: String, $department: String) {
-    coworkerDirectory(search: $search, department: $department) {
+  query GetCoworkerDirectory($search: String, $department: String, $directReportsOnly: Boolean) {
+    coworkerDirectory(search: $search, department: $department, directReportsOnly: $directReportsOnly) {
       userId
       employeeId
       preferredName
@@ -147,6 +147,7 @@ export const GET_COWORKER_DIRECTORY_QUERY = gql`
       profilePhotoUrl
       relationship
       directReport
+      pendingAbsenceCount
     }
   }
 `;

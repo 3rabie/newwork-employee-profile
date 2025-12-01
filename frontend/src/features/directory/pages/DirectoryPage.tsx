@@ -3,19 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { getCoworkerDirectory } from '../api/directoryApi';
 import type { Coworker, DirectoryFilters } from '../types';
 import { FeedbackModal } from '../../feedback/components/FeedbackModal';
+import { useAuth } from '../../auth/contexts/AuthContext';
 import './DirectoryPage.css';
 
 interface FormState {
   search: string;
   department: string;
+  directReportsOnly: boolean;
 }
 
 const initialFilters: FormState = {
   search: '',
   department: '',
+  directReportsOnly: false,
 };
 
 export function DirectoryPage() {
+  const { user } = useAuth();
+  const isManager = user?.role === 'MANAGER';
   const navigate = useNavigate();
   const [coworkers, setCoworkers] = useState<Coworker[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +41,7 @@ export function DirectoryPage() {
         const payload: DirectoryFilters = {
           search: appliedFilters.search.trim() || undefined,
           department: appliedFilters.department.trim() || undefined,
+          directReportsOnly: isManager && appliedFilters.directReportsOnly ? true : undefined,
         };
         const results = await getCoworkerDirectory(payload);
         setCoworkers(results);
@@ -62,7 +68,10 @@ export function DirectoryPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setAppliedFilters({ ...formState });
+    setAppliedFilters({
+      ...formState,
+      directReportsOnly: isManager ? formState.directReportsOnly : false,
+    });
   };
 
   const resetFilters = () => {
@@ -123,6 +132,23 @@ export function DirectoryPage() {
                 ))}
               </select>
             </label>
+
+            {isManager && (
+              <label className="directory-field directory-toggle">
+                <span>Manager view</span>
+                <div className="toggle-row">
+                  <input
+                    id="directReportsOnly"
+                    type="checkbox"
+                    checked={formState.directReportsOnly}
+                    onChange={(event) =>
+                      setFormState((prev) => ({ ...prev, directReportsOnly: event.target.checked }))
+                    }
+                  />
+                  <span>Show only my direct reports</span>
+                </div>
+              </label>
+            )}
           </div>
           <div className="directory-filters__actions">
             <button type="button" className="btn-secondary" onClick={resetFilters}>
@@ -150,8 +176,12 @@ export function DirectoryPage() {
         <section className="directory-grid">
           {coworkers.map((person) => {
             const displayName = person.preferredName || person.legalFirstName || 'Employee';
-            const shouldShowPill = person.directReport;
-            const relationshipLabel = person.directReport ? 'Direct Report' : '';
+            const showDirectReportPill = isManager && formState.directReportsOnly && person.directReport;
+            const relationshipLabel = showDirectReportPill ? 'Direct report' : 'Coworker';
+            const pendingBadge =
+              showDirectReportPill && person.pendingAbsenceCount && person.pendingAbsenceCount > 0
+                ? person.pendingAbsenceCount
+                : null;
 
             return (
               <article key={person.userId} className="directory-card">
@@ -164,15 +194,22 @@ export function DirectoryPage() {
                     .toUpperCase()}
                 </div>
                 <div className="directory-card__body">
-                  <div className="directory-card__title">
-                    <h2>{displayName}</h2>
-                    <span
-                      className={`directory-pill ${
-                        person.directReport ? 'pill-direct-report' : 'pill-coworker'
-                      }`}
-                    >
-                      {relationshipLabel}
-                    </span>
+                  <div className="directory-card__title-row">
+                    <div className="directory-card__title">
+                      <h2>{displayName}</h2>
+                      {showDirectReportPill && (
+                        <span className="directory-pill pill-direct-report">{relationshipLabel}</span>
+                      )}
+                    </div>
+                    {pendingBadge !== null && (
+                      <span
+                        className="directory-badge"
+                        title="Pending approvals awaiting your review"
+                        aria-label="Pending approvals"
+                      >
+                        {pendingBadge}
+                      </span>
+                    )}
                   </div>
                   <p className="directory-card__job">
                     {person.jobTitle ?? 'Team member'} · {person.department ?? 'N/A'}
@@ -194,10 +231,7 @@ export function DirectoryPage() {
                     >
                       View Profile
                     </button>
-                    <button
-                      className="btn-primary"
-                      onClick={() => setRecipient(person)}
-                    >
+                    <button className="btn-primary" onClick={() => setRecipient(person)}>
                       Give Feedback
                     </button>
                   </div>
