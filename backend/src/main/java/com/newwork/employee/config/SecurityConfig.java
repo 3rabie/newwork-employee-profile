@@ -59,7 +59,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/graphiql/**"
+                                "/graphiql/**",
+                                "/actuator/health/**",
+                                "/actuator/info/**"
                         ).permitAll()
                         .requestMatchers("/error").permitAll()
                         // GraphQL endpoint - requires authentication but handled by @AuthenticationPrincipal
