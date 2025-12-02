@@ -1,20 +1,106 @@
+version: '3.8'
+
 services:
+  # PostgreSQL Database
   postgres:
-    image: postgres:16-alpine
-    container_name: employee-profile-db
+    image: postgres:15-alpine
+    container_name: employee_profile_db
     environment:
       POSTGRES_DB: employee_profile
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - employee_network
+
+  # Spring Boot Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: employee_profile_backend
+    environment:
+      # Database Configuration
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/employee_profile
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-secret-key-change-in-production-minimum-256-bits-required-for-hs256}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # HuggingFace AI Configuration
+      APP_AI_HF_ENABLED: ${APP_AI_HF_ENABLED:-true}
+      APP_AI_HF_URL: ${APP_AI_HF_URL:-https://router.huggingface.co/v1/chat/completions}
+      APP_AI_HF_MODEL: ${APP_AI_HF_MODEL:-meta-llama/Llama-3.1-8B-Instruct}
+      APP_AI_HF_API_KEY: ${APP_AI_HF_API_KEY:-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}
+      APP_AI_HF_TIMEOUT: ${APP_AI_HF_TIMEOUT:-PT10S}
+
+      # Security Configuration
+      APP_SECURITY_ALLOWED_ORIGINS: ${APP_SECURITY_ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:80,http://localhost}
+      APP_SECURITY_ALLOWED_METHODS: ${APP_SECURITY_ALLOWED_METHODS:-GET,POST,PUT,PATCH,DELETE,OPTIONS}
+      APP_SECURITY_ALLOWED_HEADERS: ${APP_SECURITY_ALLOWED_HEADERS:-*}
+      APP_SECURITY_ALLOW_CREDENTIALS: ${APP_SECURITY_ALLOW_CREDENTIALS:-true}
+      APP_SECURITY_SWITCH_USER_ENABLED: ${APP_SECURITY_SWITCH_USER_ENABLED:-true}
+
+      # Spring Configuration
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      SERVER_PORT: 8080
+
+      # Flyway Configuration
+      SPRING_FLYWAY_ENABLED: true
+      SPRING_FLYWAY_BASELINE_ON_MIGRATE: true
+      SPRING_FLYWAY_VALIDATE_ON_MIGRATE: true
+      SPRING_FLYWAY_OUT_OF_ORDER: true
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - employee_network
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: employee_profile_frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+      VITE_ENABLE_SWITCH_USER: ${VITE_ENABLE_SWITCH_USER:-true}
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - employee_network
+
+networks:
+  employee_network:
+    driver: bridge
 
 volumes:
   postgres_data:
+    driver: local
