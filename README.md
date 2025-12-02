@@ -109,14 +109,6 @@ docker-compose up
 # Backend API: http://localhost:8080
 # GraphQL Playground: http://localhost:8080/graphiql
 ```
-
-### Test Users
-| Email | Password | Role | Access |
-|-------|----------|------|--------|
-| manager@company.com | pwd951753 | Manager | Full team access |
-| emp1@company.com | pwd951753 | Employee | Standard access |
-| emp2@company.com | pwd951753 | HR | Standard access |
-
 ## Project Structure
 
 ```
