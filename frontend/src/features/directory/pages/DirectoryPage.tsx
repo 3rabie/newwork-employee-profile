@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCoworkerDirectory } from '../api/directoryApi';
 import type { Coworker, DirectoryFilters } from '../types';

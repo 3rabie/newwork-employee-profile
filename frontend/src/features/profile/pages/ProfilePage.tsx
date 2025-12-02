@@ -27,8 +27,6 @@ import type {
   CreateAbsenceRequestInput,
   AbsenceType
 } from '../../absence/types';
-import { graphqlRequest } from '../../../lib/graphql-client';
-import { GET_COWORKER_DIRECTORY_QUERY } from '../../../lib/graphql-queries';
 import './ProfilePage.css';
 
 type ApiErrorResponse = {
@@ -76,7 +74,6 @@ const ProfilePage: React.FC = () => {
     note: ''
   });
   const [absenceFormErrors, setAbsenceFormErrors] = useState<Record<string, string>>({});
-  const [personLookup, setPersonLookup] = useState<Record<string, { name: string; employeeId?: string }>>({});
 
   const isSelf = user?.userId === userId;
   const canGiveFeedback = Boolean(user?.userId && userId && user?.userId !== userId);
@@ -152,27 +149,8 @@ const ProfilePage: React.FC = () => {
 
   const loadDirectory = async () => {
     try {
-      const data = await graphqlRequest<{
-        coworkerDirectory: Array<{
-          userId: string;
-          preferredName?: string;
-          legalFirstName: string;
-          legalLastName: string;
-          employeeId: string;
-        }>;
-      }>(GET_COWORKER_DIRECTORY_QUERY);
-
-      const map = data.coworkerDirectory.reduce<Record<string, { name: string; employeeId: string }>>(
-        (acc, person) => {
-          const name = person.preferredName
-            ? `${person.preferredName} ${person.legalLastName}`
-            : `${person.legalFirstName} ${person.legalLastName}`;
-          acc[person.userId] = { name, employeeId: person.employeeId };
-          return acc;
-        },
-        {}
-      );
-      setPersonLookup(map);
+      // Person lookup map - reserved for future enhancement
+      // await graphqlRequest(GET_COWORKER_DIRECTORY_QUERY);
     } catch {
       // Best effort, ignore errors here
     }

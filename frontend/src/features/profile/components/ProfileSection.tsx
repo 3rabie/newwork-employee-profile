@@ -53,16 +53,20 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({
     <div className="profile-section">
       <h2 className="profile-section-title">{title}</h2>
       <div className="profile-section-fields">
-        {adjustedFields.map((field) => (
-          <ProfileField
-            key={field.key}
-            metadata={field}
-            value={profile[field.key]}
-            isEditMode={isEditMode}
-            onChange={onChange}
-            error={fieldErrors[field.key as string]}
-          />
-        ))}
+        {adjustedFields.map((field) => {
+          const value = profile[field.key];
+          const fieldValue = field.key === 'metadata' ? undefined : value as string | number | null | undefined;
+          return (
+            <ProfileField
+              key={field.key}
+              metadata={field}
+              value={fieldValue}
+              isEditMode={isEditMode}
+              onChange={onChange}
+              error={fieldErrors[field.key as string]}
+            />
+          );
+        })}
       </div>
     </div>
   );
