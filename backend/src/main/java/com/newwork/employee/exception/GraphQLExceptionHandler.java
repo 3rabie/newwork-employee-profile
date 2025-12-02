@@ -1,7 +1,5 @@
-package com.newwork.employee.controller.graphql;
+package com.newwork.employee.exception;
 
-import com.newwork.employee.exception.ForbiddenException;
-import com.newwork.employee.exception.ResourceNotFoundException;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.schema.DataFetchingEnvironment;
@@ -21,13 +19,25 @@ public class GraphQLExceptionHandler extends DataFetcherExceptionResolverAdapter
 
     @Override
     protected GraphQLError resolveToSingleError(Throwable ex, DataFetchingEnvironment env) {
+        String path = env.getExecutionStepInfo().getPath().toString();
+
         if (ex instanceof ResourceNotFoundException) {
+            log.debug("GraphQL NOT_FOUND at path {}: {}", path, ex.getMessage());
             return buildError(env, ex.getMessage(), ErrorType.NOT_FOUND);
         }
 
         if (ex instanceof ForbiddenException) {
+            log.warn("GraphQL FORBIDDEN access attempt at path {}: {}", path, ex.getMessage());
             return buildError(env, ex.getMessage(), ErrorType.FORBIDDEN);
         }
+
+        if (ex instanceof IllegalArgumentException) {
+            log.debug("GraphQL BAD_REQUEST at path {}: {}", path, ex.getMessage());
+            return buildError(env, ex.getMessage(), ErrorType.BAD_REQUEST);
+        }
+
+        // Log unhandled exceptions for investigation
+        log.error("Unhandled GraphQL exception at path {}: {}", path, ex.getMessage(), ex);
 
         // Let Spring GraphQL handle other exceptions
         return null;

@@ -1,4 +1,4 @@
-package com.newwork.employee.config;
+package com.newwork.employee.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

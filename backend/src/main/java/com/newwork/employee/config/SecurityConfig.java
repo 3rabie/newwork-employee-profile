@@ -1,5 +1,6 @@
 package com.newwork.employee.config;
 
+import com.newwork.employee.config.properties.SecurityProperties;
 import com.newwork.employee.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -57,7 +58,8 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/graphiql/**"
                         ).permitAll()
                         .requestMatchers("/error").permitAll()
                         // GraphQL endpoint - requires authentication but handled by @AuthenticationPrincipal
