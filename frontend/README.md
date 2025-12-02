@@ -54,15 +54,6 @@ VITE_ENABLE_SWITCH_USER=true
 
 **Note**: Vite embeds environment variables at build time. Rebuild after changes.
 
-**Default Test Users**:
-| Email | Password | Role |
-|-------|----------|------|
-| alice.manager@company.com | password123 | Manager |
-| bob.employee@company.com | password123 | Employee |
-| charlie.hr@company.com | password123 | HR |
-
-## Architecture
-
 ### Tech Stack
 - React 19 + React Router 7
 - TypeScript 5.9
