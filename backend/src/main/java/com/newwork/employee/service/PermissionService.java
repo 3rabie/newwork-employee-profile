@@ -4,6 +4,7 @@ import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.FieldType;
 import com.newwork.employee.entity.enums.Relationship;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -67,4 +68,13 @@ public interface PermissionService {
      * @return true if the viewer can edit the field, false otherwise
      */
     boolean canEdit(UUID viewerId, UUID profileOwnerId, FieldType fieldType);
+
+    /**
+     * Returns the set of field types that are visible for the given relationship.
+     * This method encapsulates the permission logic for field visibility.
+     *
+     * @param relationship the relationship between viewer and profile owner
+     * @return set of field types that the viewer can see
+     */
+    Set<FieldType> getVisibleFieldTypes(Relationship relationship);
 }

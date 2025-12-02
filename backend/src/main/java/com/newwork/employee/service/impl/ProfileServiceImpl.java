@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -47,7 +48,8 @@ public class ProfileServiceImpl implements ProfileService {
         Relationship relationship = permissionService.determineRelationship(viewerId, profileUserId);
         log.debug("Relationship determined: {}", relationship);
 
-        ProfileDTO dto = profileMapper.toDTO(profile, relationship);
+        Set<FieldType> visibleFieldTypes = permissionService.getVisibleFieldTypes(relationship);
+        ProfileDTO dto = profileMapper.toDTO(profile, visibleFieldTypes);
         dto.setMetadata(buildMetadata(relationship));
         return dto;
     }
@@ -84,9 +86,21 @@ public class ProfileServiceImpl implements ProfileService {
         EmployeeProfile saved = profileRepository.save(profile);
         log.info("Profile updated for user {} by viewer {}", profileUserId, viewerId);
 
-        ProfileDTO dto = profileMapper.toDTO(saved, relationship);
+        Set<FieldType> visibleFieldTypes = permissionService.getVisibleFieldTypes(relationship);
+        ProfileDTO dto = profileMapper.toDTO(saved, visibleFieldTypes);
         dto.setMetadata(buildMetadata(relationship));
         return dto;
+    }
+
+    @Override
+    public ProfileDTO toProfileDtoForViewer(EmployeeProfile profile, UUID viewerId, UUID profileOwnerId) {
+        if (profile == null) {
+            return null;
+        }
+
+        Relationship relationship = permissionService.determineRelationship(viewerId, profileOwnerId);
+        Set<FieldType> visibleFieldTypes = permissionService.getVisibleFieldTypes(relationship);
+        return profileMapper.toDTO(profile, visibleFieldTypes);
     }
 
     private boolean hasNonSensitiveUpdates(ProfileUpdateDTO dto) {

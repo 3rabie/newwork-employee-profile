@@ -6,7 +6,7 @@ import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.AbsenceStatus;
 import com.newwork.employee.entity.enums.Relationship;
 import com.newwork.employee.exception.UserNotFoundException;
-import com.newwork.employee.repository.AbsenceRequestRepository;
+import com.newwork.employee.repository.EmployeeAbsenceRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.DirectoryService;
@@ -30,7 +30,7 @@ public class DirectoryServiceImpl implements DirectoryService {
 
     private final EmployeeProfileRepository profileRepository;
     private final UserRepository userRepository;
-    private final AbsenceRequestRepository absenceRequestRepository;
+    private final EmployeeAbsenceRepository absenceRequestRepository;
     private final PermissionService permissionService;
 
     @Override

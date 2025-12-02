@@ -2,6 +2,7 @@ package com.newwork.employee.service;
 
 import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.dto.ProfileUpdateDTO;
+import com.newwork.employee.entity.EmployeeProfile;
 
 import java.util.UUID;
 
@@ -13,4 +14,6 @@ public interface ProfileService {
     ProfileDTO getProfile(UUID viewerId, UUID profileUserId);
 
     ProfileDTO updateProfile(UUID viewerId, UUID profileUserId, ProfileUpdateDTO updateDTO);
+
+    ProfileDTO toProfileDtoForViewer(EmployeeProfile profile, UUID viewerId, UUID profileOwnerId);
 }

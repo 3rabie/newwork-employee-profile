@@ -3,37 +3,27 @@ package com.newwork.employee.mapper;
 import com.newwork.employee.dto.ProfileDTO;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.enums.FieldType;
-import com.newwork.employee.entity.enums.Relationship;
 import com.newwork.employee.util.DateTimeUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 /**
- * Mapper for converting EmployeeProfile entities to ProfileDTOs.
- * Applies permission-based field filtering based on viewer relationship.
+ * Pure mapper for converting EmployeeProfile entities to ProfileDTOs.
+ * Field filtering is determined by the caller (service layer) via visible field types.
  */
 @Component
 public class ProfileMapper {
 
     /**
-     * Convert EmployeeProfile entity to ProfileDTO with full data (no filtering).
-     * Use this when the viewer is the profile owner (SELF relationship).
+     * Convert EmployeeProfile entity to ProfileDTO with field filtering.
+     * Only fields whose types are in the visibleFieldTypes set will be included.
      *
-     * @param profile the employee profile entity
-     * @return ProfileDTO with all fields populated
+     * @param profile           the employee profile entity
+     * @param visibleFieldTypes set of field types that should be included in the DTO
+     * @return ProfileDTO with fields filtered based on visible types
      */
-    public ProfileDTO toDTO(EmployeeProfile profile) {
-        return toDTO(profile, Relationship.SELF);
-    }
-
-    /**
-     * Convert EmployeeProfile entity to ProfileDTO with permission filtering.
-     * Fields are included/excluded based on the viewer's relationship to the profile owner.
-     *
-     * @param profile      the employee profile entity
-     * @param relationship the viewer's relationship to the profile owner
-     * @return ProfileDTO with fields filtered by permissions
-     */
-    public ProfileDTO toDTO(EmployeeProfile profile, Relationship relationship) {
+    public ProfileDTO toDTO(EmployeeProfile profile, Set<FieldType> visibleFieldTypes) {
         if (profile == null) {
             return null;
         }
@@ -46,8 +36,8 @@ public class ProfileMapper {
                 .createdAt(DateTimeUtil.toOffset(profile.getCreatedAt()))
                 .updatedAt(DateTimeUtil.toOffset(profile.getUpdatedAt()));
 
-        // SYSTEM_MANAGED fields - visible to everyone (SELF, MANAGER, COWORKER)
-        if (canView(relationship, FieldType.SYSTEM_MANAGED)) {
+        // SYSTEM_MANAGED fields
+        if (visibleFieldTypes.contains(FieldType.SYSTEM_MANAGED)) {
             builder
                     .legalFirstName(profile.getLegalFirstName())
                     .legalLastName(profile.getLegalLastName())
@@ -61,8 +51,8 @@ public class ProfileMapper {
                     .fte(profile.getFte());
         }
 
-        // NON_SENSITIVE fields - visible to everyone (SELF, MANAGER, COWORKER)
-        if (canView(relationship, FieldType.NON_SENSITIVE)) {
+        // NON_SENSITIVE fields
+        if (visibleFieldTypes.contains(FieldType.NON_SENSITIVE)) {
             builder
                     .preferredName(profile.getPreferredName())
                     .jobTitle(profile.getJobTitle())
@@ -74,8 +64,8 @@ public class ProfileMapper {
                     .profilePhotoUrl(profile.getProfilePhotoUrl());
         }
 
-        // SENSITIVE fields - visible to SELF and MANAGER only
-        if (canView(relationship, FieldType.SENSITIVE)) {
+        // SENSITIVE fields
+        if (visibleFieldTypes.contains(FieldType.SENSITIVE)) {
             builder
                     .personalEmail(profile.getPersonalEmail())
                     .personalPhone(profile.getPersonalPhone())
@@ -91,27 +81,5 @@ public class ProfileMapper {
         }
 
         return builder.build();
-    }
-
-    /**
-     * Determine if a relationship allows viewing a specific field type.
-     * Implements the permission matrix from PRD Section 3.3.
-     *
-     * @param relationship the viewer's relationship
-     * @param fieldType    the field type
-     * @return true if viewing is allowed
-     */
-    private boolean canView(Relationship relationship, FieldType fieldType) {
-        return switch (fieldType) {
-            case SYSTEM_MANAGED, NON_SENSITIVE ->
-                // Everyone can view SYSTEM_MANAGED and NON_SENSITIVE fields
-                    relationship == Relationship.SELF ||
-                            relationship == Relationship.MANAGER ||
-                            relationship == Relationship.COWORKER;
-            case SENSITIVE ->
-                // Only SELF and MANAGER can view SENSITIVE fields
-                    relationship == Relationship.SELF ||
-                            relationship == Relationship.MANAGER;
-        };
     }
 }

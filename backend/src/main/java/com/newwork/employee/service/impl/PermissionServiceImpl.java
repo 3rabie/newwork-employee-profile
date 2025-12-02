@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -126,5 +128,17 @@ public class PermissionServiceImpl implements PermissionService {
     public boolean canEdit(UUID viewerId, UUID profileOwnerId, FieldType fieldType) {
         Relationship relationship = determineRelationship(viewerId, profileOwnerId);
         return canEdit(relationship, fieldType);
+    }
+
+    @Override
+    public Set<FieldType> getVisibleFieldTypes(Relationship relationship) {
+        Set<FieldType> visibleTypes = new HashSet<>();
+        for (FieldType fieldType : FieldType.values()) {
+            if (canView(relationship, fieldType)) {
+                visibleTypes.add(fieldType);
+            }
+        }
+        log.debug("Visible field types for {}: {}", relationship, visibleTypes);
+        return visibleTypes;
     }
 }
