@@ -2,12 +2,12 @@ package com.newwork.employee.service;
 
 import com.newwork.employee.dto.request.CreateAbsenceRequest;
 import com.newwork.employee.dto.request.UpdateAbsenceStatusRequest;
-import com.newwork.employee.entity.AbsenceRequest;
+import com.newwork.employee.entity.EmployeeAbsence;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.AbsenceStatus;
 import com.newwork.employee.entity.enums.AbsenceType;
 import com.newwork.employee.entity.enums.Role;
-import com.newwork.employee.repository.AbsenceRequestRepository;
+import com.newwork.employee.repository.EmployeeAbsenceRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.impl.AbsenceServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 class AbsenceServiceImplTest {
 
     @Mock
-    private AbsenceRequestRepository absenceRequestRepository;
+    private EmployeeAbsenceRepository absenceRequestRepository;
 
     @Mock
     private UserRepository userRepository;
@@ -71,7 +71,7 @@ class AbsenceServiceImplTest {
                 "Vacation"
         );
         when(userRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
-        when(absenceRequestRepository.save(any(AbsenceRequest.class)))
+        when(absenceRequestRepository.save(any(EmployeeAbsence.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         var result = absenceService.submit(employee.getId(), dto);
@@ -83,7 +83,7 @@ class AbsenceServiceImplTest {
 
     @Test
     void updateStatusShouldApprove() {
-        AbsenceRequest request = AbsenceRequest.builder()
+        EmployeeAbsence request = EmployeeAbsence.builder()
                 .id(UUID.randomUUID())
                 .user(employee)
                 .manager(manager)
@@ -94,7 +94,7 @@ class AbsenceServiceImplTest {
                 .build();
         when(absenceRequestRepository.findByIdWithUserAndManager(request.getId()))
                 .thenReturn(Optional.of(request));
-        when(absenceRequestRepository.save(any(AbsenceRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(absenceRequestRepository.save(any(EmployeeAbsence.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var result = absenceService.updateStatus(manager.getId(), request.getId(),
                 UpdateAbsenceStatusRequest.builder().action("APPROVE").build());
@@ -104,7 +104,7 @@ class AbsenceServiceImplTest {
 
     @Test
     void updateStatusShouldRejectNonManager() {
-        AbsenceRequest request = AbsenceRequest.builder()
+        EmployeeAbsence request = EmployeeAbsence.builder()
                 .id(UUID.randomUUID())
                 .user(employee)
                 .manager(manager)
@@ -123,7 +123,7 @@ class AbsenceServiceImplTest {
 
     @Test
     void updateStatusShouldRejectWithNote() {
-        AbsenceRequest request = AbsenceRequest.builder()
+        EmployeeAbsence request = EmployeeAbsence.builder()
                 .id(UUID.randomUUID())
                 .user(employee)
                 .manager(manager)
@@ -134,7 +134,7 @@ class AbsenceServiceImplTest {
                 .build();
         when(absenceRequestRepository.findByIdWithUserAndManager(request.getId()))
                 .thenReturn(Optional.of(request));
-        when(absenceRequestRepository.save(any(AbsenceRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(absenceRequestRepository.save(any(EmployeeAbsence.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var result = absenceService.updateStatus(manager.getId(), request.getId(),
                 UpdateAbsenceStatusRequest.builder().action("REJECT").note("Need coverage").build());
@@ -179,7 +179,7 @@ class AbsenceServiceImplTest {
                 "Was ill"
         );
         when(userRepository.findById(employee.getId())).thenReturn(Optional.of(employee));
-        when(absenceRequestRepository.save(any(AbsenceRequest.class)))
+        when(absenceRequestRepository.save(any(EmployeeAbsence.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         var result = absenceService.submit(employee.getId(), dto);
@@ -203,7 +203,7 @@ class AbsenceServiceImplTest {
 
     @Test
     void completeExpiredApprovedShouldMarkCompleted() {
-        AbsenceRequest approved = AbsenceRequest.builder()
+        EmployeeAbsence approved = EmployeeAbsence.builder()
                 .id(UUID.randomUUID())
                 .user(employee)
                 .manager(manager)

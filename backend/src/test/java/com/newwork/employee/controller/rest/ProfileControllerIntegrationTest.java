@@ -1,4 +1,4 @@
-package com.newwork.employee.controller;
+package com.newwork.employee.controller.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newwork.employee.dto.ProfileUpdateDTO;
@@ -28,7 +28,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;

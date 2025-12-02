@@ -1,4 +1,4 @@
-package com.newwork.employee.controller;
+package com.newwork.employee.controller.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newwork.employee.dto.request.CreateFeedbackRequest;
@@ -7,7 +7,6 @@ import com.newwork.employee.dto.request.PolishFeedbackRequest;
 import com.newwork.employee.dto.response.AuthResponse;
 import com.newwork.employee.dto.response.PolishFeedbackResponse;
 import com.newwork.employee.entity.EmployeeProfile;
-import com.newwork.employee.entity.Feedback;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.EmploymentStatus;
 import com.newwork.employee.entity.enums.Role;
@@ -36,7 +35,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.mockito.ArgumentMatchers.anyString;

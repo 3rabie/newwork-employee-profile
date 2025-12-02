@@ -32,6 +32,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -107,7 +109,8 @@ class ProfileServiceTest {
             when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
             when(permissionService.determineRelationship(profileOwnerId, profileOwnerId))
                     .thenReturn(Relationship.SELF);
-            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.getProfile(profileOwnerId, profileOwnerId);
 
@@ -115,7 +118,7 @@ class ProfileServiceTest {
             assertThat(result.getId()).isEqualTo(profile.getId());
             verify(profileRepository).findByUserId(profileOwnerId);
             verify(permissionService).determineRelationship(profileOwnerId, profileOwnerId);
-            verify(profileMapper).toDTO(profile, Relationship.SELF);
+            verify(profileMapper).toDTO(eq(profile), anySet());
         }
 
         @Test
@@ -124,13 +127,14 @@ class ProfileServiceTest {
             when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
             when(permissionService.determineRelationship(viewerId, profileOwnerId))
                     .thenReturn(Relationship.MANAGER);
-            when(profileMapper.toDTO(profile, Relationship.MANAGER)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.getProfile(viewerId, profileOwnerId);
 
             assertThat(result).isNotNull();
             verify(permissionService).determineRelationship(viewerId, profileOwnerId);
-            verify(profileMapper).toDTO(profile, Relationship.MANAGER);
+            verify(profileMapper).toDTO(eq(profile), anySet());
         }
 
         @Test
@@ -139,12 +143,13 @@ class ProfileServiceTest {
             when(profileRepository.findByUserId(profileOwnerId)).thenReturn(Optional.of(profile));
             when(permissionService.determineRelationship(viewerId, profileOwnerId))
                     .thenReturn(Relationship.COWORKER);
-            when(profileMapper.toDTO(profile, Relationship.COWORKER)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.getProfile(viewerId, profileOwnerId);
 
             assertThat(result).isNotNull();
-            verify(profileMapper).toDTO(profile, Relationship.COWORKER);
+            verify(profileMapper).toDTO(eq(profile), anySet());
         }
 
         @Test
@@ -175,7 +180,8 @@ class ProfileServiceTest {
                     .thenReturn(Relationship.SELF);
             when(permissionService.canEdit(Relationship.SELF, FieldType.NON_SENSITIVE)).thenReturn(true);
             when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
 
@@ -198,7 +204,8 @@ class ProfileServiceTest {
                     .thenReturn(Relationship.SELF);
             when(permissionService.canEdit(Relationship.SELF, FieldType.SENSITIVE)).thenReturn(true);
             when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
 
@@ -220,7 +227,8 @@ class ProfileServiceTest {
                     .thenReturn(Relationship.MANAGER);
             when(permissionService.canEdit(Relationship.MANAGER, FieldType.NON_SENSITIVE)).thenReturn(true);
             when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-            when(profileMapper.toDTO(profile, Relationship.MANAGER)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.updateProfile(viewerId, profileOwnerId, updateDTO);
 
@@ -297,7 +305,8 @@ class ProfileServiceTest {
             when(permissionService.canEdit(Relationship.SELF, FieldType.NON_SENSITIVE)).thenReturn(true);
             when(permissionService.canEdit(Relationship.SELF, FieldType.SENSITIVE)).thenReturn(true);
             when(profileRepository.save(any(EmployeeProfile.class))).thenReturn(profile);
-            when(profileMapper.toDTO(profile, Relationship.SELF)).thenReturn(profileDTO);
+            when(permissionService.canView(any(Relationship.class), any(FieldType.class))).thenReturn(true);
+            when(profileMapper.toDTO(eq(profile), anySet())).thenReturn(profileDTO);
 
             ProfileDTO result = profileService.updateProfile(profileOwnerId, profileOwnerId, updateDTO);
 

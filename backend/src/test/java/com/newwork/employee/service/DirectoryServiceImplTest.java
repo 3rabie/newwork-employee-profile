@@ -6,7 +6,7 @@ import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.EmploymentStatus;
 import com.newwork.employee.entity.enums.Relationship;
 import com.newwork.employee.entity.enums.WorkLocationType;
-import com.newwork.employee.repository.AbsenceRequestRepository;
+import com.newwork.employee.repository.EmployeeAbsenceRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.impl.DirectoryServiceImpl;
@@ -39,7 +39,7 @@ class DirectoryServiceImplTest {
     private PermissionService permissionService;
 
     @Mock
-    private AbsenceRequestRepository absenceRequestRepository;
+    private EmployeeAbsenceRepository absenceRequestRepository;
 
     @InjectMocks
     private DirectoryServiceImpl directoryService;

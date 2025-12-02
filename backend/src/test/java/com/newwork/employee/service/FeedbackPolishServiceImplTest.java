@@ -1,6 +1,6 @@
 package com.newwork.employee.service;
 
-import com.newwork.employee.config.HuggingFaceProperties;
+import com.newwork.employee.config.properties.HuggingFaceProperties;
 import com.newwork.employee.dto.response.PolishFeedbackResponse;
 import com.newwork.employee.exception.AiServiceException;
 import com.newwork.employee.service.client.HuggingFaceClient;

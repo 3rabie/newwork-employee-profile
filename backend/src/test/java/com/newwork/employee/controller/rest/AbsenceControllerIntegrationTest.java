@@ -6,7 +6,7 @@ import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.AbsenceStatus;
 import com.newwork.employee.entity.enums.AbsenceType;
 import com.newwork.employee.entity.enums.Role;
-import com.newwork.employee.repository.AbsenceRequestRepository;
+import com.newwork.employee.repository.EmployeeAbsenceRepository;
 import com.newwork.employee.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,7 +51,7 @@ class AbsenceControllerIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
-    private AbsenceRequestRepository absenceRequestRepository;
+    private EmployeeAbsenceRepository absenceRequestRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;

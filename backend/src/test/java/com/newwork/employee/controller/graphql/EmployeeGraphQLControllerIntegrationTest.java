@@ -3,7 +3,7 @@ package com.newwork.employee.controller.graphql;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newwork.employee.dto.request.LoginRequest;
 import com.newwork.employee.dto.response.AuthResponse;
-import com.newwork.employee.entity.AbsenceRequest;
+import com.newwork.employee.entity.EmployeeAbsence;
 import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.AbsenceStatus;
@@ -11,7 +11,7 @@ import com.newwork.employee.entity.enums.AbsenceType;
 import com.newwork.employee.entity.enums.EmploymentStatus;
 import com.newwork.employee.entity.enums.Role;
 import com.newwork.employee.entity.enums.WorkLocationType;
-import com.newwork.employee.repository.AbsenceRequestRepository;
+import com.newwork.employee.repository.EmployeeAbsenceRepository;
 import com.newwork.employee.repository.EmployeeProfileRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.AbsenceService;
@@ -74,7 +74,7 @@ class EmployeeGraphQLControllerIntegrationTest {
     private String engineerToken;
 
     @Autowired
-    private AbsenceRequestRepository absenceRequestRepository;
+    private EmployeeAbsenceRepository absenceRequestRepository;
     @Autowired
     private AbsenceService absenceService;
 
@@ -201,14 +201,14 @@ class EmployeeGraphQLControllerIntegrationTest {
     @Test
     @DisplayName("Scheduled completion marks approved past requests as COMPLETED")
     void shouldCompleteExpiredApproved() {
-        AbsenceRequest approved = createAbsence(engineer, manager, AbsenceStatus.APPROVED);
+        EmployeeAbsence approved = createAbsence(engineer, manager, AbsenceStatus.APPROVED);
         approved.setStartDate(LocalDate.now().minusDays(3));
         approved.setEndDate(LocalDate.now().minusDays(1));
         absenceRequestRepository.save(approved);
 
         absenceService.completeExpiredApproved(LocalDate.now());
 
-        AbsenceRequest refreshed = absenceRequestRepository.findById(approved.getId()).orElseThrow();
+        EmployeeAbsence refreshed = absenceRequestRepository.findById(approved.getId()).orElseThrow();
         Assertions.assertThat(refreshed.getStatus()).isEqualTo(AbsenceStatus.COMPLETED);
     }
 
@@ -264,8 +264,8 @@ class EmployeeGraphQLControllerIntegrationTest {
                 .build());
     }
 
-    private AbsenceRequest createAbsence(User user, User manager, AbsenceStatus status) {
-        return absenceRequestRepository.save(AbsenceRequest.builder()
+    private EmployeeAbsence createAbsence(User user, User manager, AbsenceStatus status) {
+        return absenceRequestRepository.save(EmployeeAbsence.builder()
                 .user(user)
                 .manager(manager)
                 .startDate(LocalDate.now())

@@ -1,4 +1,11 @@
+jwt:
+  secret: test-jwt-secret-key-for-integration-tests-minimum-32-characters-required
+  expiration: 86400000
+
 app:
   security:
     demo:
       switch-user-enabled: true
+  ai:
+    huggingface:
+      enabled: false

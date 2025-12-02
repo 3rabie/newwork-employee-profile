@@ -1,4 +1,4 @@
-package com.newwork.employee.graphql;
+package com.newwork.employee.controller.graphql;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.newwork.employee.dto.request.LoginRequest;

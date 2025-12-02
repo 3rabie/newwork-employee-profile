@@ -31,7 +31,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = "app.security.demo.switch-user-enabled=false")
 @AutoConfigureMockMvc
 @Testcontainers
-@ActiveProfiles("test")
 class AuthControllerDemoFeatureFlagTest {
 
     @Container
