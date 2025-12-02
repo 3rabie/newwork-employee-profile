@@ -195,14 +195,6 @@ mvn spring-boot:run
 # Or run JAR
 java -jar target/employee-profile-0.0.1-SNAPSHOT.jar
 ```
-
-### Test Users
-| Email | Password | Role |
-|-------|----------|------|
-| alice.manager@company.com | password123 | Manager |
-| bob.employee@company.com | password123 | Employee |
-| charlie.hr@company.com | password123 | HR |
-
 ## Testing
 
 ```bash
