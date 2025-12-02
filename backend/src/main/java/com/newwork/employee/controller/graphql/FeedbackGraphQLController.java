@@ -1,16 +1,13 @@
 package com.newwork.employee.controller.graphql;
 
 import com.newwork.employee.dto.FeedbackDTO;
-import com.newwork.employee.entity.EmployeeProfile;
 import com.newwork.employee.entity.User;
-import com.newwork.employee.security.AuthenticatedUser;
 import com.newwork.employee.service.FeedbackService;
+import com.newwork.employee.security.AuthenticatedUserAccessor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
@@ -20,6 +17,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * GraphQL controller for feedback queries.
  * Provides efficient data fetching with DataLoader to prevent N+1 queries.
+ * User.profile field resolution is handled by EmployeeGraphQLController.
  */
 @Controller
 @RequiredArgsConstructor
@@ -29,19 +27,19 @@ public class FeedbackGraphQLController {
 
     @QueryMapping
     public List<FeedbackDTO> feedbackForUser(@Argument UUID userId) {
-        UUID viewerId = extractUserId();
+        UUID viewerId = AuthenticatedUserAccessor.currentUserId();
         return feedbackService.getFeedbackForUser(viewerId, userId);
     }
 
     @QueryMapping
     public List<FeedbackDTO> myAuthoredFeedback() {
-        UUID authorId = extractUserId();
+        UUID authorId = AuthenticatedUserAccessor.currentUserId();
         return feedbackService.getFeedbackByAuthor(authorId);
     }
 
     @QueryMapping
     public List<FeedbackDTO> myReceivedFeedback() {
-        UUID recipientId = extractUserId();
+        UUID recipientId = AuthenticatedUserAccessor.currentUserId();
         return feedbackService.getFeedbackByRecipient(recipientId);
     }
 
@@ -55,20 +53,4 @@ public class FeedbackGraphQLController {
         return loader.load(feedback.getRecipientId());
     }
 
-    @SchemaMapping(typeName = "User", field = "profile")
-    public CompletableFuture<EmployeeProfile> profile(User user, org.dataloader.DataLoader<UUID, EmployeeProfile> loader) {
-        return loader.load(user.getId());
-    }
-
-    private UUID extractUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new IllegalStateException("Unauthenticated access to GraphQL feedback query");
-        }
-        Object principal = authentication.getPrincipal();
-        if (principal instanceof AuthenticatedUser authenticatedUser) {
-            return authenticatedUser.getUserId();
-        }
-        throw new IllegalStateException("Unsupported principal type: " + principal.getClass());
-    }
 }
