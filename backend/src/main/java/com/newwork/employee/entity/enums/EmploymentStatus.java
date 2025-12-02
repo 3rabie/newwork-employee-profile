@@ -6,7 +6,5 @@ package com.newwork.employee.entity.enums;
  */
 public enum EmploymentStatus {
     ACTIVE,
-    ON_LEAVE,
-    TERMINATED,
-    RETIRED
+    ON_LEAVE
 }

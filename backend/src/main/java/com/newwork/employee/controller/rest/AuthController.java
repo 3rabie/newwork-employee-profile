@@ -1,6 +1,6 @@
 package com.newwork.employee.controller.rest;
 
-import com.newwork.employee.config.SecurityProperties;
+import com.newwork.employee.config.properties.SecurityProperties;
 import com.newwork.employee.dto.request.LoginRequest;
 import com.newwork.employee.dto.request.SwitchUserRequest;
 import com.newwork.employee.dto.response.AuthResponse;

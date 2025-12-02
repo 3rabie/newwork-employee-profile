@@ -4,6 +4,7 @@ import com.newwork.employee.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,12 +20,33 @@ public class JwtTokenProvider {
 
     private final SecretKey secretKey;
     private final long jwtExpiration;
+    private final String jwtSecret;
 
     public JwtTokenProvider(
             @Value("${jwt.secret}") String jwtSecret,
             @Value("${jwt.expiration}") long jwtExpiration) {
+        this.jwtSecret = jwtSecret;
         this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.jwtExpiration = jwtExpiration;
+    }
+
+    /**
+     * Validates JWT configuration on startup.
+     * Logs warnings for weak default secrets.
+     */
+    @PostConstruct
+    public void validateConfiguration() {
+        if (jwtSecret.contains("secret-key-change") || jwtSecret.contains("change-in-production") || jwtSecret.contains("test-jwt-secret")) {
+            log.warn("========================================");
+            log.warn("SECURITY WARNING: Using default/weak JWT secret!");
+            log.warn("Set JWT_SECRET environment variable to a strong random value (min 256 bits)");
+            log.warn("This is acceptable for development/testing but MUST be changed in production");
+            log.warn("========================================");
+        } else if (jwtSecret.length() < 32) {
+            log.warn("WARNING: JWT secret is shorter than recommended 256 bits (32 characters)");
+        }
+
+        log.info("JWT authentication configured with expiration: {}ms", jwtExpiration);
     }
 
     /**
