@@ -9,5 +9,5 @@ const toBoolean = (value: string | boolean | undefined): boolean => {
 };
 
 export const featureFlags = {
-  switchUser: toBoolean(import.meta.env.VITE_ENABLE_SWITCH_USER ?? 'false'),
+  switchUser: toBoolean(import.meta.env.VITE_ENABLE_SWITCH_USER ?? 'true'),
 };
