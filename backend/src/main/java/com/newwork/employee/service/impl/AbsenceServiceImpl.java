@@ -1,13 +1,13 @@
 package com.newwork.employee.service.impl;
 
-import com.newwork.employee.dto.AbsenceRequestDTO;
+import com.newwork.employee.dto.EmployeeAbsenceDTO;
 import com.newwork.employee.dto.request.CreateAbsenceRequest;
 import com.newwork.employee.dto.request.UpdateAbsenceStatusRequest;
-import com.newwork.employee.entity.AbsenceRequest;
+import com.newwork.employee.entity.EmployeeAbsence;
 import com.newwork.employee.entity.User;
 import com.newwork.employee.entity.enums.AbsenceStatus;
 import com.newwork.employee.entity.enums.AbsenceType;
-import com.newwork.employee.repository.AbsenceRequestRepository;
+import com.newwork.employee.repository.EmployeeAbsenceRepository;
 import com.newwork.employee.repository.UserRepository;
 import com.newwork.employee.service.AbsenceService;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,18 +24,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AbsenceServiceImpl implements AbsenceService {
 
-    private final AbsenceRequestRepository absenceRequestRepository;
+    private final EmployeeAbsenceRepository absenceRequestRepository;
     private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public AbsenceRequestDTO submit(UUID requesterId, CreateAbsenceRequest request) {
+    public EmployeeAbsenceDTO submit(UUID requesterId, CreateAbsenceRequest request) {
         validateDates(request.startDate(), request.endDate(), request.type());
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         User manager = requester.getManager();
 
-        AbsenceRequest entity = AbsenceRequest.builder()
+        EmployeeAbsence entity = EmployeeAbsence.builder()
                 .user(requester)
                 .manager(manager)
                 .startDate(request.startDate())
@@ -50,7 +50,7 @@ public class AbsenceServiceImpl implements AbsenceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AbsenceRequestDTO> getMyRequests(UUID requesterId) {
+    public List<EmployeeAbsenceDTO> getMyRequests(UUID requesterId) {
         return absenceRequestRepository.findAllByUserId(requesterId)
                 .stream()
                 .map(this::toDto)
@@ -59,7 +59,7 @@ public class AbsenceServiceImpl implements AbsenceService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<AbsenceRequestDTO> getPendingForManager(UUID managerId) {
+    public List<EmployeeAbsenceDTO> getPendingForManager(UUID managerId) {
         return absenceRequestRepository.findByManagerIdAndStatus(managerId, AbsenceStatus.PENDING)
                 .stream()
                 .map(this::toDto)
@@ -68,8 +68,8 @@ public class AbsenceServiceImpl implements AbsenceService {
 
     @Override
     @Transactional
-    public AbsenceRequestDTO updateStatus(UUID managerId, UUID requestId, UpdateAbsenceStatusRequest update) {
-        AbsenceRequest request = absenceRequestRepository.findByIdWithUserAndManager(requestId)
+    public EmployeeAbsenceDTO updateStatus(UUID managerId, UUID requestId, UpdateAbsenceStatusRequest update) {
+        EmployeeAbsence request = absenceRequestRepository.findByIdWithUserAndManager(requestId)
                 .orElseThrow(() -> new EntityNotFoundException("Absence request not found"));
         ensureManager(managerId, request);
         if (request.getStatus() != AbsenceStatus.PENDING) {
@@ -84,7 +84,7 @@ public class AbsenceServiceImpl implements AbsenceService {
         return toDto(absenceRequestRepository.save(request));
     }
 
-    private void ensureManager(UUID managerId, AbsenceRequest request) {
+    private void ensureManager(UUID managerId, EmployeeAbsence request) {
         if (request.getManager() == null || !request.getManager().getId().equals(managerId)) {
             throw new AccessDeniedException("Only the manager can act on this request");
         }
@@ -104,7 +104,7 @@ public class AbsenceServiceImpl implements AbsenceService {
     @Override
     @Transactional
     public int completeExpiredApproved(LocalDate asOfDate) {
-        List<AbsenceRequest> toComplete = absenceRequestRepository.findByStatusAndEndDateBefore(
+        List<EmployeeAbsence> toComplete = absenceRequestRepository.findByStatusAndEndDateBefore(
                 AbsenceStatus.APPROVED, asOfDate);
         toComplete.forEach(ar -> ar.setStatus(AbsenceStatus.COMPLETED));
         absenceRequestRepository.saveAll(toComplete);
@@ -126,8 +126,8 @@ public class AbsenceServiceImpl implements AbsenceService {
         }
     }
 
-    private AbsenceRequestDTO toDto(AbsenceRequest entity) {
-        return AbsenceRequestDTO.builder()
+    private EmployeeAbsenceDTO toDto(EmployeeAbsence entity) {
+        return EmployeeAbsenceDTO.builder()
                 .id(entity.getId())
                 .userId(entity.getUser().getId())
                 .managerId(entity.getManager() != null ? entity.getManager().getId() : null)

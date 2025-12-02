@@ -13,12 +13,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "absence_requests")
+@Table(name = "employee_absences")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AbsenceRequest {
+public class EmployeeAbsence {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

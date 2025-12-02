@@ -1,6 +1,6 @@
 package com.newwork.employee.controller.rest;
 
-import com.newwork.employee.dto.AbsenceRequestDTO;
+import com.newwork.employee.dto.EmployeeAbsenceDTO;
 import com.newwork.employee.dto.request.CreateAbsenceRequest;
 import com.newwork.employee.dto.request.UpdateAbsenceStatusRequest;
 import com.newwork.employee.security.AuthenticatedUser;
@@ -36,15 +36,15 @@ public class AbsenceController {
             description = "Create an absence request for the authenticated user. Supports vacation, sick, and other types."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = AbsenceRequestDTO.class))),
+            @ApiResponse(responseCode = "201", description = "Created", content = @Content(schema = @Schema(implementation = EmployeeAbsenceDTO.class))),
             @ApiResponse(responseCode = "400", description = "Validation failed"),
             @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
-    public ResponseEntity<AbsenceRequestDTO> submit(
+    public ResponseEntity<EmployeeAbsenceDTO> submit(
             @AuthenticationPrincipal AuthenticatedUser user,
             @Valid @RequestBody CreateAbsenceRequest request
     ) {
-        AbsenceRequestDTO created = absenceService.submit(user.getUserId(), request);
+        EmployeeAbsenceDTO created = absenceService.submit(user.getUserId(), request);
         return ResponseEntity.status(201).body(created);
     }
 
@@ -54,14 +54,14 @@ public class AbsenceController {
             description = "Managers can approve or reject a pending absence using action APPROVE or REJECT. Optional note is accepted for rejections."
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Request updated", content = @Content(schema = @Schema(implementation = AbsenceRequestDTO.class))),
+            @ApiResponse(responseCode = "200", description = "Request updated", content = @Content(schema = @Schema(implementation = EmployeeAbsenceDTO.class))),
             @ApiResponse(responseCode = "400", description = "Invalid action or body"),
             @ApiResponse(responseCode = "401", description = "Unauthorized"),
             @ApiResponse(responseCode = "403", description = "Forbidden - not a manager or not allowed to update this request"),
             @ApiResponse(responseCode = "404", description = "Request not found")
     })
     @PreAuthorize("hasRole('MANAGER')")
-    public ResponseEntity<AbsenceRequestDTO> updateStatus(
+    public ResponseEntity<EmployeeAbsenceDTO> updateStatus(
             @AuthenticationPrincipal AuthenticatedUser user,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateAbsenceStatusRequest request

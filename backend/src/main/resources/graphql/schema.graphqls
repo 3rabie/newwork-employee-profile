@@ -36,14 +36,14 @@ type Query {
     myReceivedFeedback: [Feedback!]!
 
     """
-    List absence requests for the authenticated user.
+    List employee absences for the authenticated user.
     """
-    myAbsenceRequests: [AbsenceRequest!]!
+    myAbsenceRequests: [EmployeeAbsence!]!
 
     """
-    List pending absence requests for the current manager.
+    List pending employee absences for the current manager.
     """
-    pendingAbsenceRequests: [AbsenceRequest!]!
+    pendingAbsenceRequests: [EmployeeAbsence!]!
 }
 
 # Feedback type
@@ -221,8 +221,8 @@ type Coworker {
     pendingAbsenceCount: Int
 }
 
-"""Absence request record"""
-type AbsenceRequest {
+"""Employee absence record"""
+type EmployeeAbsence {
     id: UUID!
     userId: UUID!
     managerId: UUID

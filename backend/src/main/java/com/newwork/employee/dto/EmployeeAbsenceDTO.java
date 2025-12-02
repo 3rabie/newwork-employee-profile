@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Value
 @Builder
-public class AbsenceRequestDTO {
+public class EmployeeAbsenceDTO {
     UUID id;
     UUID userId;
     UUID managerId;
