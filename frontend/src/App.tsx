@@ -6,47 +6,50 @@ import { HomePage } from './pages/HomePage';
 import ProfilePage from './features/profile/pages/ProfilePage';
 import { DirectoryPage } from './features/directory/pages/DirectoryPage';
 import { AbsencePage } from './features/absence/pages/AbsencePage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <HomePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile/:userId"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/people"
-            element={
-              <ProtectedRoute>
-                <DirectoryPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/absences"
-            element={
-              <ProtectedRoute>
-                <AbsencePage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile/:userId"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/people"
+              element={
+                <ProtectedRoute>
+                  <DirectoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/absences"
+              element={
+                <ProtectedRoute>
+                  <AbsencePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );
