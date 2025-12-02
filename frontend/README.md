@@ -22,6 +22,8 @@ The frontend provides four core features:
 
 Two API protocols supported: REST (Axios) for mutations, GraphQL (graphql-request) for queries.
 
+**Development Feature**: User switching is enabled by default. Select any user from the dropdown in the UI to instantly test different roles without logging out. Controlled by `VITE_ENABLE_SWITCH_USER` environment variable.
+
 ## Features
 
 ### Permission-Based UI

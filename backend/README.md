@@ -22,6 +22,8 @@ The service implements three core features:
 
 One GraphQL endpoint (`/graphql`) and multiple REST endpoints (`/api/*`) provide access to all features.
 
+**Development Feature**: User switching is enabled by default. Add `?switch-user=email@company.com` to any request to instantly test different user roles without logging in/out. See [Configuration](#configuration) for details.
+
 ## Permission Model
 
 Access control based on relationship between viewer and profile owner:
