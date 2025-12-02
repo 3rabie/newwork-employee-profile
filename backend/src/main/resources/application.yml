@@ -73,5 +73,5 @@ app:
       enabled: ${APP_AI_HF_ENABLED:true}
       api-url: ${APP_AI_HF_URL:https://router.huggingface.co/v1/chat/completions}
       model: ${APP_AI_HF_MODEL:meta-llama/Llama-3.1-8B-Instruct}
-      api-key: ${APP_AI_HF_API_KEY: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}
+      api-key: ${APP_AI_HF_API_KEY:}
       timeout: ${APP_AI_HF_TIMEOUT:PT10S}
